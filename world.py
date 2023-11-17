@@ -219,6 +219,7 @@ class World:
                 tuple(adv_pos),
                 self.max_step,
             )
+
             time_taken = time() - start_time
             self.update_player_time(time_taken)
 
