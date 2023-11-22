@@ -23,124 +23,359 @@ class StudentAgent(Agent):
             "d": 2,
             "l": 3,
         }
-        self.depth_limit = 3  # Depth limit for the search
-
 
     def step(self, chess_board, my_pos, adv_pos, max_step):
+        """
+        Implement the step function of your agent here.
+        You can use the following variables to access the chess board:
+        - chess_board: a numpy array of shape (x_max, y_max, 4)
+        - my_pos: a tuple of (x, y)
+        - adv_pos: a tuple of (x, y)
+        - max_step: an integer
+
+        You should return a tuple of ((x, y), dir),
+        where (x, y) is the next position of your agent and dir is the direction of the wall
+        you want to put on.
+
+        Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
+        """
+
+        # Some simple code to help you with timing. Consider checking 
+        # time_taken during your search and breaking with the best answer
+        # so far when it nears 2 seconds.
         start_time = time.time()
-
-        # Implement Alpha-Beta Pruning within this function
-        best_move, _ = self.alpha_beta(chess_board, my_pos, adv_pos, max_step, self.depth_limit, -np.inf, np.inf, True)
-
         time_taken = time.time() - start_time
+        
         print("My AI's turn took ", time_taken, "seconds.")
 
-        return best_move
-
-    def alpha_beta(self, board, my_pos, adv_pos, max_step, depth, alpha, beta, maximizing_player):
-
-        if depth == 0 or self.is_terminal(board, my_pos, adv_pos):
-            return None, self.evaluate(board, my_pos, adv_pos)
-
-        if maximizing_player:
-            max_eval = -np.inf
-            best_move = None
-            for move in self.get_possible_moves(board, my_pos, adv_pos, max_step):
-                eval = self.alpha_beta(self.simulate_move(board, move), move[0], adv_pos, max_step, depth - 1, alpha, beta, False)[1]
-                if eval > max_eval:
-                    max_eval = eval
-                    best_move = move
-                alpha = max(alpha, eval)
-                if beta <= alpha:
-                    break
-            return best_move, max_eval
-        else:
-            min_eval = np.inf
-            best_move = None
-            for move in self.get_possible_moves(board, adv_pos, my_pos, max_step):
-                eval = self.alpha_beta(self.simulate_move(board, move), my_pos, move[0], max_step, depth - 1, alpha, beta, True)[1]
-                if eval < min_eval:
-                    min_eval = eval
-                    best_move = move
-                beta = min(beta, eval)
-                if beta <= alpha:
-                    break
-            return best_move, min_eval
+        # dummy return
+        return my_pos, self.dir_map["u"]
     
-    def get_possible_moves(self, board, pos, adv_pos, max_step):
-        moves_list = []
-        directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]  # Up, Right, Down, Left
-        rows, cols = len(board), len(board[0])
+    def minimax(self, myPos, advPos, depth, isMaximizing, maxStep):
+        if depth == 0 or self.isGG():
+            return self.eval()
+        
+        if isMaximizing:
+            maxEval = float('-inf')
+            bestMove = None
 
-        # Function to check if a position is within the board and not blocked by a barrier
-        def is_valid_move(row, col, dir_idx):
-            return 0 <= row < rows and 0 <= col < cols and not board[row][col][dir_idx]
-
-        # Explore each direction
-        for dir_idx, (dr, dc) in enumerate(directions):
-            for step in range(1, max_step + 1):
-                new_row, new_col = pos[0] + dr * step, pos[1] + dc * step
-
-                # Check if the new position is valid
-                if is_valid_move(pos[0] + dr * (step - 1), pos[1] + dc * (step - 1), dir_idx):
-                    # Add the move with each possible barrier placement
-                    for barrier_dir in self.dir_map.values():
-                        moves_list.append(((new_row, new_col), barrier_dir))
-                else:
-                    # If the path is blocked or out of bounds, stop exploring further in this direction
-                    break
-
-        return moves_list
-
-
-
-    def simulate_move(self, board, move):
-        new_board = deepcopy(board)
-        pos, dir = move
-        # Place the barrier in the chosen direction
-        new_board[pos[0]][pos[1]][dir] = True
-        return new_board
+            for move in self.getLegalMoves():
+                
+        return 
     
-    def evaluate(self, board, my_pos, adv_pos):
-        my_score = self.calculate_zone_score(board, my_pos)
-        adv_score = self.calculate_zone_score(board, adv_pos)
-        return my_score - adv_score
+    def getLegalMoves(self, myPos, advPos, maxStep, chessBoard):
+        legalMoves = []
+        moveQ = [(myPos, [], maxStep)]
 
-    def calculate_zone_score(self, board, pos):
-        """
-        Calculate the score for a zone. This function should consider not only the current
-        number of free spaces but also the potential for future expansion and control.
-        """
-        directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]  # Up, Right, Down, Left
+        while moveQ:
+            currentPos, legalMovesSoFar, stepsLeft = moveQ.pop(0)
 
-        score = 0
-        visited = set()
-        queue = [pos]
-
-        while queue:
-            current_pos = queue.pop(0)
-            if current_pos in visited:
+            if stepsLeft == 0:
+                legalMoves.append(legalMovesSoFar)
                 continue
 
-            visited.add(current_pos)
-            r, c = current_pos
+            # self.moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
+            x, y = currentPos
+            for direction in range(4):
+                deltaX, deltaY = self.moves(direction)
+                deltaPosition = (x + deltaX, y + deltaY)
 
-            # Check all four directions from the current position
-            for d in range(4):  # Up, Right, Down, Left
-                if not board[r][c][d]:
-                    dr, dc = directions[d]
-                    next_pos = (r + dr, c + dc)
-                    if 0 <= next_pos[0] < len(board) and 0 <= next_pos[1] < len(board[0]):
-                        queue.append(next_pos)
-                        score += 1
-                        # Additional scoring can be added here based on strategic considerations,
-                        # such as proximity to the opponent, control of the central area, etc.
+                if not chessBoard[x, y, direction] and deltaPosition != advPos:
+                    nextLegalMoves = legalMovesSoFar + [(deltaPosition, direction)]
+                    moveQ.append((deltaPosition, nextLegalMoves, stepsLeft - 1))
+        
+        return legalMoves
 
-        return score
 
-    def is_terminal(self, board, my_pos, adv_pos):
-        # Check if any player is completely enclosed
-        return not any(~board[my_pos[0]][my_pos[1]]) or not any(~board[adv_pos[0]][adv_pos[1]])
+
+
+
+
+
+             
+
+
+
+#     def eval():
+#         return 
     
+#     def isGG():
+#         return False
+    
+#     # Build a list of the moves we can make
 
+# allowed_dirs = [ d                                
+#     for d in range(0,4)                                      # 4 moves possible
+#     if not self.chess_board[r,c,d] and                       # chess_board True means wall
+#     not adv_pos == (r+self.moves[d][0],c+self.moves[d][1])]  # cannot move through Adversary
 
+# # Moves (Up, Right, Down, Left)
+#         self.moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
+
+# def check_valid_step(self, start_pos, end_pos, barrier_dir):
+#         """
+#         Check if the step the agent takes is valid (reachable and within max steps).
+
+#         Parameters
+#         ----------
+#         start_pos : tuple
+#             The start position of the agent.
+#         end_pos : np.ndarray
+#             The end position of the agent.
+#         barrier_dir : int
+#             The direction of the barrier.
+#         """
+#         # Endpoint already has barrier or is border
+#         r, c = end_pos
+#         if self.chess_board[r, c, barrier_dir]:
+#             return False
+#         if np.array_equal(start_pos, end_pos):
+#             return True
+
+#         # Get position of the adversary
+#         adv_pos = self.p0_pos if self.turn else self.p1_pos
+
+#         # BFS
+#         state_queue = [(start_pos, 0)]
+#         visited = {tuple(start_pos)}
+#         is_reached = False
+#         while state_queue and not is_reached:
+#             cur_pos, cur_step = state_queue.pop(0)
+#             r, c = cur_pos
+#             if cur_step == self.max_step:
+#                 break
+#             for dir, move in enumerate(self.moves):
+#                 if self.chess_board[r, c, dir]:
+#                     continue
+
+#                 next_pos = cur_pos + move
+#                 if np.array_equal(next_pos, adv_pos) or tuple(next_pos) in visited:
+#                     continue
+#                 if np.array_equal(next_pos, end_pos):
+#                     is_reached = True
+#                     break
+
+#                 visited.add(tuple(next_pos))
+#                 state_queue.append((next_pos, cur_step + 1))
+
+#         return is_reached
+
+#     def check_endgame(self):
+#         """
+#         Check if the game ends and compute the current score of the agents.
+
+#         Returns
+#         -------
+#         is_endgame : bool
+#             Whether the game ends.
+#         player_1_score : int
+#             The score of player 1.
+#         player_2_score : int
+#             The score of player 2.
+#         """
+#         # Union-Find
+#         father = dict()
+#         for r in range(self.board_size):
+#             for c in range(self.board_size):
+#                 father[(r, c)] = (r, c)
+
+#         def find(pos):
+#             if father[pos] != pos:
+#                 father[pos] = find(father[pos])
+#             return father[pos]
+
+#         def union(pos1, pos2):
+#             father[pos1] = pos2
+
+#         for r in range(self.board_size):
+#             for c in range(self.board_size):
+#                 for dir, move in enumerate(
+#                     self.moves[1:3]
+#                 ):  # Only check down and right
+#                     if self.chess_board[r, c, dir + 1]:
+#                         continue
+#                     pos_a = find((r, c))
+#                     pos_b = find((r + move[0], c + move[1]))
+#                     if pos_a != pos_b:
+#                         union(pos_a, pos_b)
+
+#         for r in range(self.board_size):
+#             for c in range(self.board_size):
+#                 find((r, c))
+#         p0_r = find(tuple(self.p0_pos))
+#         p1_r = find(tuple(self.p1_pos))
+#         p0_score = list(father.values()).count(p0_r)
+#         p1_score = list(father.values()).count(p1_r)
+#         if p0_r == p1_r:
+#             return False, p0_score, p1_score
+#         player_win = None
+#         win_blocks = -1
+#         if p0_score > p1_score:
+#             player_win = 0
+#             win_blocks = p0_score
+#         elif p0_score < p1_score:
+#             player_win = 1
+#             win_blocks = p1_score
+#         else:
+#             player_win = -1  # Tie
+#         if player_win >= 0:
+#             logging.info(
+#                 f"Game ends! Player {self.player_names[player_win]} wins having control over {win_blocks} blocks!"
+#             )
+#         else:
+#             logging.info("Game ends! It is a Tie!")
+#         return True, p0_score, p1_score
+
+#     def check_boundary(self, pos):
+#         r, c = pos
+#         return 0 <= r < self.board_size and 0 <= c < self.board_size
+
+#     def set_barrier(self, r, c, dir):
+#         # Set the barrier to True
+#         self.chess_board[r, c, dir] = True
+#         # Set the opposite barrier to True
+#         move = self.moves[dir]
+#         self.chess_board[r + move[0], c + move[1], self.opposites[dir]] = True
+
+#     def random_walk(self, my_pos, adv_pos):
+#         """
+#         Randomly walk to the next position in the board.
+
+#         Parameters
+#         ----------
+#         my_pos : tuple
+#             The position of the agent.
+#         adv_pos : tuple
+#             The position of the adversary.
+#         """
+#         steps = np.random.randint(0, self.max_step + 1)
+
+#         # Pick steps random but allowable moves
+#         for _ in range(steps):
+#             r, c = my_pos
+
+#             # Build a list of the moves we can make
+#             allowed_dirs = [ d                                
+#                 for d in range(0,4)                                      # 4 moves possible
+#                 if not self.chess_board[r,c,d] and                       # chess_board True means wall
+#                 not adv_pos == (r+self.moves[d][0],c+self.moves[d][1])]  # cannot move through Adversary
+
+#             if len(allowed_dirs)==0:
+#                 # If no possible move, we must be enclosed by our Adversary
+#                 break
+
+#             random_dir = allowed_dirs[np.random.randint(0, len(allowed_dirs))]
+
+#             # This is how to update a row,col by the entries in moves 
+#             # to be consistent with game logic
+#             m_r, m_c = self.moves[random_dir]
+#             my_pos = (r + m_r, c + m_c)
+
+#         # Final portion, pick where to put our new barrier, at random
+#         r, c = my_pos
+#         # Possibilities, any direction such that chess_board is False
+#         allowed_barriers=[i for i in range(0,4) if not self.chess_board[r,c,i]]
+#         # Sanity check, no way to be fully enclosed in a square, else game already ended
+#         assert len(allowed_barriers)>=1 
+#         dir = allowed_barriers[np.random.randint(0, len(allowed_barriers))]
+
+#         return my_pos, dir
+
+# def random_walk(self, my_pos, adv_pos):
+#         """
+#         Randomly walk to the next position in the board.
+
+#         Parameters
+#         ----------
+#         my_pos : tuple
+#             The position of the agent.
+#         adv_pos : tuple
+#             The position of the adversary.
+#         """
+#         steps = np.random.randint(0, self.max_step + 1)
+
+#         # Pick steps random but allowable moves
+#         for _ in range(steps):
+#             r, c = my_pos
+
+#             # Build a list of the moves we can make
+#             allowed_dirs = [ d                                
+#                 for d in range(0,4)                                      # 4 moves possible
+#                 if not self.chess_board[r,c,d] and                       # chess_board True means wall
+#                 not adv_pos == (r+self.moves[d][0],c+self.moves[d][1])]  # cannot move through Adversary
+
+#             if len(allowed_dirs)==0:
+#                 # If no possible move, we must be enclosed by our Adversary
+#                 break
+
+#             random_dir = allowed_dirs[np.random.randint(0, len(allowed_dirs))]
+
+#             # This is how to update a row,col by the entries in moves 
+#             # to be consistent with game logic
+#             m_r, m_c = self.moves[random_dir]
+#             my_pos = (r + m_r, c + m_c)
+
+#         # Final portion, pick where to put our new barrier, at random
+#         r, c = my_pos
+#         # Possibilities, any direction such that chess_board is False
+#         allowed_barriers=[i for i in range(0,4) if not self.chess_board[r,c,i]]
+#         # Sanity check, no way to be fully enclosed in a square, else game already ended
+#         assert len(allowed_barriers)>=1 
+#         dir = allowed_barriers[np.random.randint(0, len(allowed_barriers))]
+
+#         return my_pos, dir
+
+# def check_boundary(self, pos):
+#         r, c = pos
+#         return 0 <= r < self.board_size and 0 <= c < self.board_size
+
+#     def set_barrier(self, r, c, dir):
+#         # Set the barrier to True
+#         self.chess_board[r, c, dir] = True
+#         # Set the opposite barrier to True
+#         move = self.moves[dir]
+#         self.chess_board[r + move[0], c + move[1], self.opposites[dir]] = True
+
+#     def random_walk(self, my_pos, adv_pos):
+#         """
+#         Randomly walk to the next position in the board.
+
+#         Parameters
+#         ----------
+#         my_pos : tuple
+#             The position of the agent.
+#         adv_pos : tuple
+#             The position of the adversary.
+#         """
+#         steps = np.random.randint(0, self.max_step + 1)
+
+#         # Pick steps random but allowable moves
+#         for _ in range(steps):
+#             r, c = my_pos
+
+#             # Build a list of the moves we can make
+#             allowed_dirs = [ d                                
+#                 for d in range(0,4)                                      # 4 moves possible
+#                 if not self.chess_board[r,c,d] and                       # chess_board True means wall
+#                 not adv_pos == (r+self.moves[d][0],c+self.moves[d][1])]  # cannot move through Adversary
+
+#             if len(allowed_dirs)==0:
+#                 # If no possible move, we must be enclosed by our Adversary
+#                 break
+
+#             random_dir = allowed_dirs[np.random.randint(0, len(allowed_dirs))]
+
+#             # This is how to update a row,col by the entries in moves 
+#             # to be consistent with game logic
+#             m_r, m_c = self.moves[random_dir]
+#             my_pos = (r + m_r, c + m_c)
+
+#         # Final portion, pick where to put our new barrier, at random
+#         r, c = my_pos
+#         # Possibilities, any direction such that chess_board is False
+#         allowed_barriers=[i for i in range(0,4) if not self.chess_board[r,c,i]]
+#         # Sanity check, no way to be fully enclosed in a square, else game already ended
+#         assert len(allowed_barriers)>=1 
+#         dir = allowed_barriers[np.random.randint(0, len(allowed_barriers))]
+
+#         return my_pos, dir
