@@ -5,8 +5,8 @@ import sys
 import numpy as np
 from copy import deepcopy
 import time
-import logging
 
+import logging
 logger = logging.getLogger(__name__)
 
 @register_agent("student_agent")
@@ -26,7 +26,6 @@ class StudentAgent(Agent):
             "l": 3,
         }
 
-        
 
     def step(self, chess_board, my_pos, adv_pos, max_step):
         """
@@ -54,6 +53,12 @@ class StudentAgent(Agent):
         time_taken = time.time() - start_time
         
         print("My AI's turn took ", time_taken, "seconds.")
+
+        chessBoard = print_chessboard(chess_board, my_pos, adv_pos)
+
+        logger.info(
+            f"\n{chessBoard}"
+        )
 
         return move
     
@@ -157,7 +162,65 @@ class StudentAgent(Agent):
         # ) 
 
         return score
-    
+
+def print_chessboard(chessboard, player_pos, opponent_pos):
+    """
+    Converts the chessboard array into a human-readable string format.
+    :param chessboard: A 3D numpy array representing the chessboard.
+    :param player_pos: A tuple representing the player's position.
+    :param opponent_pos: A tuple representing the opponent's position.
+    :return: A string representation of the chessboard.
+    """
+
+    horizontal_barrier = "---"
+    vertical_barrier = "|"
+    corner = "+"
+    no_barrier = "   "
+    player = " P "
+    opponent = " O "
+
+    rows, cols, _ = chessboard.shape
+    board_str = "    "  # Initial spacing for alignment
+
+    # Print top indexes
+    for y in range(cols):
+        board_str += f" {y}  "
+    board_str += "\n"
+
+    for x in range(rows):
+        # Add top horizontal barriers for the row
+        board_str += "  " + corner  # Align with the columns
+        for y in range(cols):
+            board_str += horizontal_barrier if chessboard[x][y][0] else no_barrier
+            board_str += corner
+        board_str += "\n"
+
+        # Add vertical barriers and player/opponent symbols
+        board_str += f"{x} " if x < 10 else f"{x}"  # Align single and double-digit numbers
+        for y in range(cols):
+            if y == 0 or chessboard[x][y - 1][1]:
+                board_str += vertical_barrier
+            else:
+                board_str += " "
+
+            if (x, y) == player_pos:
+                board_str += player
+            elif (x, y) == opponent_pos:
+                board_str += opponent
+            else:
+                board_str += "   "
+
+        board_str += vertical_barrier  # Rightmost vertical barrier
+        board_str += "\n"
+
+    # Add bottom horizontal barriers for the last row
+    board_str += "  " + corner
+    for y in range(cols):
+        board_str += horizontal_barrier if chessboard[rows - 1][y][2] else no_barrier
+        board_str += corner
+
+    return board_str
+
     # def isGameOver(self, boardSize):
 
     #     # Union-Find setup
