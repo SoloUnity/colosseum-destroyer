@@ -5,7 +5,9 @@ import sys
 import numpy as np
 from copy import deepcopy
 import time
+import logging
 
+logger = logging.getLogger(__name__)
 
 @register_agent("student_agent")
 class StudentAgent(Agent):
@@ -23,6 +25,8 @@ class StudentAgent(Agent):
             "d": 2,
             "l": 3,
         }
+
+        
 
     def step(self, chess_board, my_pos, adv_pos, max_step):
         """
@@ -44,64 +48,155 @@ class StudentAgent(Agent):
         # time_taken during your search and breaking with the best answer
         # so far when it nears 2 seconds.
         start_time = time.time()
+        depth = 1
+        move, _ = self.minimax(my_pos, adv_pos, depth, max_step, chess_board, True)
+
         time_taken = time.time() - start_time
         
         print("My AI's turn took ", time_taken, "seconds.")
 
-        # dummy return
-        return my_pos, self.dir_map["u"]
+        return move
     
-    def minimax(self, myPos, advPos, depth, isMaximizing, maxStep):
-        if depth == 0 or self.isGG():
-            return self.eval()
+    def minimax(self, myPos, advPos, depth, maxStep, chessBoard, isMaximizing):
+        if depth == 0:
+            # logger.info(
+            #     f"eval return"
+            # )
+            return None, self.eval(myPos, advPos, chessBoard, maxStep)
         
         if isMaximizing:
-            maxEval = float('-inf')
+            maxScore = float("-inf")
             bestMove = None
 
-            for move in self.getLegalMoves():
-                
-        return 
-    
+            # logger.info(
+                #     f"myPos:{myPos}\nadvPos:{advPos}\nmaxStep:{maxStep}\nchessBoard:{chessBoard}\n"
+            # ) 
+
+            for move in self.getLegalMoves(myPos, advPos, maxStep, chessBoard):
+                # logger.info(
+                #     f"{move}"
+                # )
+                score = (self.minimax(move[0], advPos, depth - 1, maxStep, chessBoard, False))[1]
+                # logger.info(
+                #     f"{score[1]} > {maxScore}"
+                # )
+                if score > maxScore:
+                    maxScore = score
+                    bestMove = move
+
+            # logger.info(
+            #     f"maximizing return"
+            # )
+            return bestMove, maxScore
+        else:
+            minScore = float("inf")
+            bestMove = None
+            for move in self.getLegalMoves(advPos, myPos, maxStep, chessBoard):
+                score = (self.minimax(myPos, move[0], depth - 1, maxStep, chessBoard, True))[1]
+
+                # logger.info(
+                #     f"{score[1]} < {minScore}"
+                # )
+
+                if score < minScore:
+                    minScore = score
+                    bestMove = move
+            # logger.info(
+            #     f"minimizing return"
+            # )
+            return bestMove, minScore
+                    
+    # Needs optimization
     def getLegalMoves(self, myPos, advPos, maxStep, chessBoard):
+
+        # logger.info(
+        #     f"myPos:{myPos}\nadvPos:{advPos}\nmaxStep:{maxStep}\nchessBoard:{chessBoard}\n"
+        # ) 
+        
+        boardLength, _ , _ = chessBoard.shape
+        moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
         legalMoves = []
         moveQ = [(myPos, [], maxStep)]
-
+             
         while moveQ:
-            currentPos, legalMovesSoFar, stepsLeft = moveQ.pop(0)
+            popped = moveQ.pop(0)
+            currentPos, legalMovesSoFar, stepsLeft = popped
 
             if stepsLeft == 0:
-                legalMoves.append(legalMovesSoFar)
+                legalMoves.extend(legalMovesSoFar)
                 continue
 
-            # self.moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
-            x, y = currentPos
+            x = currentPos[0]
+            y = currentPos[1]
             for direction in range(4):
-                deltaX, deltaY = self.moves(direction)
+                deltaX = moves[direction][0]
+                deltaY = moves[direction][1]
                 deltaPosition = (x + deltaX, y + deltaY)
 
-                if not chessBoard[x, y, direction] and deltaPosition != advPos:
+                if self.checkBoundary(deltaPosition, boardLength) and not chessBoard[x, y, direction] and deltaPosition != advPos:
                     nextLegalMoves = legalMovesSoFar + [(deltaPosition, direction)]
                     moveQ.append((deltaPosition, nextLegalMoves, stepsLeft - 1))
         
         return legalMoves
 
-
-
-
-
-
-
-             
-
-
-
-#     def eval():
-#         return 
+    def checkBoundary(self, pos, boardSize):
+        x, y = pos
+        return 0 <= x < boardSize and 0 <= y < boardSize
     
-#     def isGG():
-#         return False
+    def eval(self, myPos, advPos, chessBoard, maxStep):
+        score = 0
+        #boardLength, _, _ = chessBoard.shape
+
+        # Number of legal moves available
+        myMoves = len(self.getLegalMoves(myPos, advPos, maxStep, chessBoard))
+        advMoves = len(self.getLegalMoves(advPos, myPos, maxStep, chessBoard))
+        score += (myMoves - advMoves)
+
+        # logger.info(
+        #     f"score:{score}"
+        # ) 
+
+        return score
     
+    # def isGameOver(self, boardSize):
+
+    #     # Union-Find setup
+    #     parent = dict()
+    #     for row in range(boardSize):
+    #         for col in range(boardSize):
+    #             parent[(row, col)] = (row, col)
+
+    #     def find(position):
+    #         if parent[position] != position:
+    #             parent[position] = find(parent[position])
+    #         return parent[position]
+
+    #     def union(pos1, pos2):
+    #         parent[pos1] = pos2
+
+    #     for row in range(boardSize):
+    #         for col in range(boardSize):
+    #             for direction, move in enumerate(self.moves[1:3]):  # Only check down and right
+    #                 if self.chessBoard[row, col, direction + 1]:
+    #                     continue
+    #                 posA = find((row, col))
+    #                 posB = find((row + move[0], col + move[1]))
+    #                 if posA != posB:
+    #                     union(posA, posB)
+
+    #     for row in range(boardSize):
+    #         for col in range(boardSize):
+    #             find((row, col))
+        
+    #     player0Root = find(tuple(self.player0Pos))
+    #     player1Root = find(tuple(self.player1Pos))
+        
+    #     # Game is over if players are in separate zones
+    #     return player0Root != player1Root
+
+    
+
+
 #     # Build a list of the moves we can make
 
 # allowed_dirs = [ d                                
