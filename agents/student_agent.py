@@ -77,7 +77,7 @@ class StudentAgent(Agent):
                 #     f"myPos:{myPos}\nadvPos:{advPos}\nmaxStep:{maxStep}\nchessBoard:{chessBoard}\n"
             # ) 
 
-            for move in self.getLegalMoves(myPos, advPos, maxStep, chessBoard):
+            for move in self.getLegalMoves2(myPos, advPos, maxStep, chessBoard):
                 # logger.info(
                 #     f"{move}"
                 # )
@@ -96,7 +96,7 @@ class StudentAgent(Agent):
         else:
             minScore = float("inf")
             bestMove = None
-            for move in self.getLegalMoves(advPos, myPos, maxStep, chessBoard):
+            for move in self.getLegalMoves2(advPos, myPos, maxStep, chessBoard):
                 score = (self.minimax(myPos, move[0], depth - 1, maxStep, chessBoard, True))[1]
 
                 # logger.info(
@@ -143,6 +143,40 @@ class StudentAgent(Agent):
                     moveQ.append((deltaPosition, nextLegalMoves, stepsLeft - 1))
         
         return legalMoves
+    
+    def getLegalMoves2(self, myPos, advPos, maxStep, chessBoard):
+        boardLength, _, _ = chessBoard.shape
+        moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
+
+        legalMoves = set()
+        visited = set()
+        queue = [(myPos, maxStep)]
+
+        # Case for surrounding squares
+        # BFS
+        while queue:
+            currentPos, stepsLeft = queue.pop(0)
+            visited.add(currentPos)
+            
+            for directionIndex in range(4):
+
+                boold = chessBoard[currentPos[0]][currentPos[1]][directionIndex]
+                print("Boolean: " + str(boold) + " Position: " + str((currentPos[0],currentPos[1], directionIndex)))
+                if not(chessBoard[currentPos[0]][currentPos[1]][directionIndex]):
+                    #print("Adding: " + str((currentPos, directionIndex)))
+                    legalMoves.add((currentPos, directionIndex))
+
+            if stepsLeft > 0:
+                for directionIndex in range(4):
+
+                    deltaX = currentPos[0] + moves[directionIndex][0]
+                    deltaY = currentPos[1] + moves[directionIndex][1]
+                    nextPosition = (deltaX, deltaY)
+
+                    if (nextPosition not in visited) and (self.checkBoundary(nextPosition, boardLength)) and (nextPosition != advPos[0]):
+                        queue.append((nextPosition, stepsLeft - 1))
+
+        return list(legalMoves)
 
     def checkBoundary(self, pos, boardSize):
         x, y = pos
@@ -153,8 +187,8 @@ class StudentAgent(Agent):
         #boardLength, _, _ = chessBoard.shape
 
         # Number of legal moves available
-        myMoves = len(self.getLegalMoves(myPos, advPos, maxStep, chessBoard))
-        advMoves = len(self.getLegalMoves(advPos, myPos, maxStep, chessBoard))
+        myMoves = len(self.getLegalMoves2(myPos, advPos, maxStep, chessBoard))
+        advMoves = len(self.getLegalMoves2(advPos, myPos, maxStep, chessBoard))
         score += (myMoves - advMoves)
 
         # logger.info(
