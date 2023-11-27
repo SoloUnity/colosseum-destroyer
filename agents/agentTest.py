@@ -5,41 +5,55 @@ class MockAgent:
         r, c = pos
         return 0 <= r < boardLength and 0 <= c < boardLength
 
+
     def getLegalMoves1(self, myPos, advPos, maxStep, chessBoard):
+        """
+        Get all legal moves for the current agent.
+
+        Parameters
+        ----------
+        myPos : tuple
+            The current position of the agent.
+        advPos : tuple
+            The position of the adversary.
+        maxStep : int
+            The maximum number of steps the agent can take.
+        chessBoard : np.ndarray
+            The game board with barriers and other game elements.
+
+        Returns
+        -------
+        list
+            A list of tuples representing all legal moves from myPos.
+        """
         boardLength, _, _ = chessBoard.shape
-        moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
+        legal_moves = []
+        moves = self.moves  # Assuming 'self.moves' contains possible move directions
+        visited = {myPos}
+        state_queue = [(myPos, 0)]
 
-        legalMoves = []
-        moveQ = [(myPos, maxStep)]
+        while state_queue:
+            cur_pos, cur_step = state_queue.pop(0)
 
-        while moveQ:
-            currentPos, stepsLeft = moveQ.pop(0)
+            if cur_step < maxStep:
+                for dir, move in enumerate(moves):
+                    # Skip if there's a barrier in this direction
+                    if chessBoard[cur_pos[0], cur_pos[1], dir]:
+                        continue
 
-            x, y = currentPos
+                    next_pos = tuple(np.array(cur_pos) + np.array(move))
+                    # Check for boundaries and if the position is already visited
+                    if not self.checkBoundary(next_pos, boardLength) or next_pos in visited:
+                        continue
 
-            # Add staying in place with barrier placement
-            for direction in range(4):
-                if not chessBoard[x, y, direction]:  # Check for no barrier
-                    legalMoves.append((currentPos, direction))
+                    # If next position is not the adversary's position, add to legal moves
+                    if next_pos != advPos:
+                        legal_moves.append(next_pos)
 
-            # Check for legal moves and barrier placement
-            if stepsLeft > 0:
-                for direction in range(4):
-                    deltaX, deltaY = moves[direction]
-                    deltaPosition = (x + deltaX, y + deltaY)
+                    visited.add(next_pos)
+                    state_queue.append((next_pos, cur_step + 1))
 
-                    # Check for legal movement
-                    if self.checkBoundary(deltaPosition, boardLength) and deltaPosition != advPos:
-                        if not chessBoard[x, y, direction]:  # Ensure no barrier in the direction of movement
-                            # Add barrier placement for the new position
-                            for barrierDir in range(4):
-                                if not chessBoard[deltaPosition[0], deltaPosition[1], barrierDir]:  # Check for no barrier
-                                    legalMoves.append((deltaPosition, barrierDir))
-
-        # Remove duplicates from legalMoves
-        legalMoves = list(set(legalMoves))
-
-        return legalMoves
+        return legal_moves
     
     def getLegalMoves2(self, myPos, advPos, maxStep, chessBoard):
         boardLength, _, _ = chessBoard.shape
@@ -58,7 +72,7 @@ class MockAgent:
             for directionIndex in range(4):
 
                 boold = chessBoard[currentPos[0]][currentPos[1]][directionIndex]
-                print("Boolean: " + str(boold) + " Position: " + str((currentPos[0],currentPos[1], directionIndex)))
+                #print("Boolean: " + str(boold) + " Position: " + str((currentPos[0],currentPos[1], directionIndex)))
                 if not(chessBoard[currentPos[0]][currentPos[1]][directionIndex]):
                     #print("Adding: " + str((currentPos, directionIndex)))
                     legalMoves.add((currentPos, directionIndex))
@@ -70,20 +84,10 @@ class MockAgent:
                     deltaY = currentPos[1] + moves[directionIndex][1]
                     nextPosition = (deltaX, deltaY)
 
-                    if (nextPosition not in visited) and (self.checkBoundary(nextPosition, boardLength)) and (nextPosition != advPos[0]):
+                    if (nextPosition not in visited) and (self.checkBoundary(nextPosition, boardLength)) and (nextPosition != advPos):
                         queue.append((nextPosition, stepsLeft - 1))
 
         return list(legalMoves)
-
-
-
-
-
-
-
-
-
-
 
 def print_chessboard(chessboard, player_pos, opponent_pos):
     """
@@ -93,6 +97,7 @@ def print_chessboard(chessboard, player_pos, opponent_pos):
     :param opponent_pos: A tuple representing the opponent's position.
     :return: A string representation of the chessboard.
     """
+    boardLength, _, _ = chessBoard.shape
 
     horizontal_barrier = "---"
     vertical_barrier = "|"
@@ -113,10 +118,6 @@ def print_chessboard(chessboard, player_pos, opponent_pos):
         # Add top horizontal barriers for the row
         board_str += "  " + corner  # Align with the columns
         for y in range(cols):
-
-            boold = chessboard[x][y][0]
-            # print("Boolean: " + str(boold) + " Position: " + str(((x,y), 0)))
-
             board_str += horizontal_barrier if chessboard[x][y][0] else no_barrier
             board_str += corner
         board_str += "\n"
@@ -158,55 +159,92 @@ def print_chessboard(chessboard, player_pos, opponent_pos):
 # Create a mock chess board with barriers and test the function
 boardSize = 6
 data = [
-  [
-    [True, False, False, True],
-    [True, True, False, False],
-    [True, False, False, True],
-    [True, False, False, False],
-    [True, False, False, False],
-    [True, True, False, False]
-  ],
-  [
-    [False, False, False, True],
-    [False, False, False, False],
-    [False, False, False, False],
-    [False, False, True, False],
-    [False, False, False, False],
-    [False, True, False, False]
-  ],
-  [
-    [False, False, False, True],
-    [False, False, False, False],
-    [False, False, False, False],
-    [True, False, False, False],
-    [False, False, False, False],
-    [False, True, False, False]
-  ],
-  [
-    [False, False, False, True],
-    [False, False, False, False],
-    [False, False, True, False],
-    [False, False, False, False],
-    [False, False, False, False],
-    [False, True, False, False]
-  ],
-  [
-    [False, False, False, True],
-    [False, False, False, False],
-    [True, False, False, False],
-    [False, False, False, False],
-    [False, False, False, False],
-    [False, True, False, False]
-  ],
-  [
-    [False, False, True, True],
-    [False, False, True, False],
-    [False, False, True, False],
-    [False, True, True, False],
-    [False, False, True, True],
-    [False, True, True, False]
-  ]
+  [[True, False, False, True],
+   [True, False, False, False],
+   [True, False, True, False],
+   [True, False, False, False],
+   [True, False, False, False],
+   [True, True, False, False]],
+
+  [[False, False, False, True],
+   [False, False, False, False],
+   [True, False, True, False],
+   [False, False, True, False],
+   [False, False, True, False],
+   [False, True, False, False]],
+
+  [[False, False, False, True],
+   [False, True, False, False],
+   [True, False, True, True],
+   [True, False, False, False],
+   [True, False, False, False],
+   [False, True, False, False]],
+
+  [[False, False, False, True],
+   [False, True, True, False],
+   [True, False, False, True],
+   [False, True, True, False],
+   [False, False, False, True],
+   [False, True, False, False]],
+
+  [[False, False, False, True],
+   [True, False, False, False],
+   [False, False, False, False],
+   [True, False, True, False],
+   [False, False, False, False],
+   [False, True, False, False]],
+
+  [[False, False, True, True],
+   [False, False, True, False],
+   [False, False, True, False],
+   [True, False, True, False],
+   [False, False, True, False],
+   [False, True, True, False]]
 ]
+
+# [
+#     [[ True, False, False,  True],
+#      [ True, False, False, False],
+#      [ True, False, False, False],
+#      [ True, False, False, False],
+#      [ True, False,  True, False],
+#      [ True,  True, False, False]],
+
+#     [[False, False, False,  True],
+#      [False, False, False, False],
+#      [False, False,  True, False],
+#      [False, False,  True, False],
+#      [ True, False,  True, False],
+#      [False,  True, False, False]],
+
+#     [[False, False, False,  True],
+#      [False, False, False, False],
+#      [ True, False,  True, False],
+#      [ True,  True,  True, False],
+#      [ True, False, False,  True],
+#      [False,  True, False, False]],
+
+#     [[False, False, False,  True],
+#      [False, False, False, False],
+#      [ True, False, False, False],
+#      [ True, False, False, False],
+#      [False,  True, False, False],
+#      [False,  True, False,  True]],
+
+#     [[False, False, False,  True],
+#      [False, False,  True, False],
+#      [False, False, False, False],
+#      [False, False, False, False],
+#      [False, False, False, False],
+#      [False,  True, False, False]],
+
+#     [[False, False,  True,  True],
+#      [ True, False,  True, False],
+#      [False, False,  True, False],
+#      [False, False,  True, False],
+#      [False, False,  True, False],
+#      [False,  True,  True, False]]
+# ]
 
 # Initialize the chessboard with False (equivalent to 0) values
 chessBoard = np.array(data, dtype=bool)
@@ -218,15 +256,19 @@ chessBoard = np.array(data, dtype=bool)
 #     chessBoard[pos] = True
 
 agent = MockAgent()
-myPos = (1, 1)
+# myPos = (2, 2)
+# advPos = (3, 5)
+myPos = (3, 2)
 advPos = (3, 3)
 maxStep = 1
 
 print(print_chessboard(chessBoard, myPos, advPos))
 # Run the test
-legalMoves = agent.getLegalMoves2(myPos, advPos, maxStep, chessBoard)
+legalMoves = agent.getLegalMoves1(myPos, advPos, maxStep, chessBoard)
 for i in sorted(legalMoves):
     print (i)
+
+
 
 # Reference answer is: 
 # [ 

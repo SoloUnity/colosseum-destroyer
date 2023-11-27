@@ -57,6 +57,9 @@ class StudentAgent(Agent):
         chessBoard = print_chessboard(chess_board, my_pos, adv_pos)
 
         logger.info(
+            f"\n{chess_board}"
+        )
+        logger.info(
             f"\n{chessBoard}"
         )
 
@@ -77,7 +80,7 @@ class StudentAgent(Agent):
                 #     f"myPos:{myPos}\nadvPos:{advPos}\nmaxStep:{maxStep}\nchessBoard:{chessBoard}\n"
             # ) 
 
-            for move in self.getLegalMoves2(myPos, advPos, maxStep, chessBoard):
+            for move in self.getLegalMoves(myPos, advPos, maxStep, chessBoard):
                 # logger.info(
                 #     f"{move}"
                 # )
@@ -96,7 +99,7 @@ class StudentAgent(Agent):
         else:
             minScore = float("inf")
             bestMove = None
-            for move in self.getLegalMoves2(advPos, myPos, maxStep, chessBoard):
+            for move in self.getLegalMoves(advPos, myPos, maxStep, chessBoard):
                 score = (self.minimax(myPos, move[0], depth - 1, maxStep, chessBoard, True))[1]
 
                 # logger.info(
@@ -113,38 +116,6 @@ class StudentAgent(Agent):
                     
     # Needs optimization
     def getLegalMoves(self, myPos, advPos, maxStep, chessBoard):
-
-        # logger.info(
-        #     f"myPos:{myPos}\nadvPos:{advPos}\nmaxStep:{maxStep}\nchessBoard:{chessBoard}\n"
-        # ) 
-        
-        boardLength, _ , _ = chessBoard.shape
-        moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
-        legalMoves = []
-        moveQ = [(myPos, [], maxStep)]
-             
-        while moveQ:
-            popped = moveQ.pop(0)
-            currentPos, legalMovesSoFar, stepsLeft = popped
-
-            if stepsLeft == 0:
-                legalMoves.extend(legalMovesSoFar)
-                continue
-
-            x = currentPos[0]
-            y = currentPos[1]
-            for direction in range(4):
-                deltaX = moves[direction][0]
-                deltaY = moves[direction][1]
-                deltaPosition = (x + deltaX, y + deltaY)
-
-                if self.checkBoundary(deltaPosition, boardLength) and not chessBoard[x, y, direction] and deltaPosition != advPos:
-                    nextLegalMoves = legalMovesSoFar + [(deltaPosition, direction)]
-                    moveQ.append((deltaPosition, nextLegalMoves, stepsLeft - 1))
-        
-        return legalMoves
-    
-    def getLegalMoves2(self, myPos, advPos, maxStep, chessBoard):
         boardLength, _, _ = chessBoard.shape
         moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
 
@@ -161,7 +132,7 @@ class StudentAgent(Agent):
             for directionIndex in range(4):
 
                 boold = chessBoard[currentPos[0]][currentPos[1]][directionIndex]
-                print("Boolean: " + str(boold) + " Position: " + str((currentPos[0],currentPos[1], directionIndex)))
+                #print("Boolean: " + str(boold) + " Position: " + str((currentPos[0],currentPos[1], directionIndex)))
                 if not(chessBoard[currentPos[0]][currentPos[1]][directionIndex]):
                     #print("Adding: " + str((currentPos, directionIndex)))
                     legalMoves.add((currentPos, directionIndex))
@@ -173,7 +144,7 @@ class StudentAgent(Agent):
                     deltaY = currentPos[1] + moves[directionIndex][1]
                     nextPosition = (deltaX, deltaY)
 
-                    if (nextPosition not in visited) and (self.checkBoundary(nextPosition, boardLength)) and (nextPosition != advPos[0]):
+                    if (nextPosition not in visited) and (self.checkBoundary(nextPosition, boardLength)) and (nextPosition != advPos):
                         queue.append((nextPosition, stepsLeft - 1))
 
         return list(legalMoves)
@@ -187,8 +158,8 @@ class StudentAgent(Agent):
         #boardLength, _, _ = chessBoard.shape
 
         # Number of legal moves available
-        myMoves = len(self.getLegalMoves2(myPos, advPos, maxStep, chessBoard))
-        advMoves = len(self.getLegalMoves2(advPos, myPos, maxStep, chessBoard))
+        myMoves = len(self.getLegalMoves(myPos, advPos, maxStep, chessBoard))
+        advMoves = len(self.getLegalMoves(advPos, myPos, maxStep, chessBoard))
         score += (myMoves - advMoves)
 
         # logger.info(

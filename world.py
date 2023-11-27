@@ -93,6 +93,8 @@ class World:
 
         if board_size is None:
             # Random chessboard size
+
+            # CHANGE WHEN DONE
             #self.board_size = np.random.randint(MIN_BOARD_SIZE, MAX_BOARD_SIZE)
             self.board_size = 6
             logger.info(
