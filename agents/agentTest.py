@@ -1,4 +1,5 @@
 import numpy as np
+from collections import deque
 
 class MockAgent:
     def checkBoundary(self, pos, boardLength):
@@ -60,11 +61,63 @@ class MockAgent:
                     if (self.checkBoundary(nextPosition, boardLength)) and (nextPosition != advPos):
                         if stepsLeft > 0 and (nextPosition not in visited):
                             queue.append((nextPosition, stepsLeft - 1))
-                        legalMoves.add((currentPos, directionIndex))
-                    else:
-                        legalMoves.add((currentPos, directionIndex))
+                    legalMoves.add((currentPos, directionIndex))
+                        
                         
         return list(legalMoves)
+    
+    def getLegalMoves3(self, myPos, advPos, maxStep, chessBoard):
+        boardLength, _, _ = chessBoard.shape
+        moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
+
+        legalMoves = set()
+        visited = set()
+        queue = deque([(myPos, maxStep)])  # Using deque for efficient pops from the front
+
+        while queue:
+            currentPos, stepsLeft = queue.popleft()
+            if currentPos in visited:
+                continue
+            visited.add(currentPos)
+
+            for directionIndex, (dx, dy) in enumerate(moves):
+                if not chessBoard[currentPos[0]][currentPos[1]][directionIndex]:
+                    nextPosition = (currentPos[0] + dx, currentPos[1] + dy)
+
+                    if self.checkBoundary(nextPosition, boardLength) and nextPosition != advPos:
+                        if stepsLeft > 0:
+                            queue.append((nextPosition, stepsLeft - 1))
+                    legalMoves.add((currentPos, directionIndex))
+
+
+        return list(legalMoves)
+    
+
+    def getLegalMoves4(self, myPos, advPos, maxStep, chessBoard):
+        boardLength, _, _ = chessBoard.shape
+        moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
+
+        legalMoves = set()
+        visited = set()
+        queue = deque([(myPos, maxStep)])
+
+        while queue:
+            currentPos, stepsLeft = queue.popleft()
+
+            if currentPos in visited or not self.checkBoundary(currentPos, boardLength) or currentPos == advPos:
+                continue
+            visited.add(currentPos)
+
+            for directionIndex, (dx, dy) in enumerate(moves):
+                if not chessBoard[currentPos[0]][currentPos[1]][directionIndex]:
+                    nextPosition = (currentPos[0] + dx, currentPos[1] + dy)
+                    if nextPosition not in visited:
+                        if stepsLeft > 0:
+                            queue.append((nextPosition, stepsLeft - 1))
+                    legalMoves.add((currentPos, directionIndex))
+
+        return list(legalMoves)
+
 
 def print_chessboard(chessboard, player_pos, opponent_pos):
     """
@@ -237,11 +290,11 @@ agent = MockAgent()
 # advPos = (3, 5)
 myPos = (3, 2)
 advPos = (3, 3)
-maxStep = 2
+maxStep = 1
 
 print(print_chessboard(chessBoard, myPos, advPos))
 # Run the test
-legalMoves = agent.getLegalMoves2(myPos, advPos, maxStep, chessBoard)
+legalMoves = agent.getLegalMoves4(myPos, advPos, maxStep, chessBoard)
 for i in sorted(legalMoves):
     print (i)
 

@@ -5,6 +5,7 @@ import sys
 import numpy as np
 from copy import deepcopy
 import time
+from collections import deque
 
 import logging
 logger = logging.getLogger(__name__)
@@ -47,8 +48,8 @@ class StudentAgent(Agent):
         # time_taken during your search and breaking with the best answer
         # so far when it nears 2 seconds.
         start_time = time.time()
-        depth = 1
-        move, _ = self.minimax(my_pos, adv_pos, depth, max_step, chess_board, True)
+        depth = 4
+        move, _ = self.alphaBeta(my_pos, adv_pos, depth, max_step, chess_board, True, float("-inf"), float("inf"))
 
         time_taken = time.time() - start_time
         
@@ -61,53 +62,35 @@ class StudentAgent(Agent):
 
         return move
     
-    def minimax(self, myPos, advPos, depth, maxStep, chessBoard, isMaximizing):
+    def alphaBeta(self, myPos, advPos, depth, maxStep, chessBoard, isMaximizing, alpha, beta):
         if depth == 0:
-            # logger.info(
-            #     f"eval return"
-            # )
             return None, self.eval(myPos, advPos, chessBoard, maxStep)
         
         if isMaximizing:
             maxScore = float("-inf")
             bestMove = None
-
-            # logger.info(
-                #     f"myPos:{myPos}\nadvPos:{advPos}\nmaxStep:{maxStep}\nchessBoard:{chessBoard}\n"
-            # ) 
-
             for move in self.getLegalMoves(myPos, advPos, maxStep, chessBoard):
-                # logger.info(
-                #     f"{move}"
-                # )
-                score = (self.minimax(move[0], advPos, depth - 1, maxStep, chessBoard, False))[1]
-                # logger.info(
-                #     f"{score[1]} > {maxScore}"
-                # )
+                score = (self.alphaBeta(move[0], advPos, depth - 1, maxStep, chessBoard, False, alpha, beta))[1]
                 if score > maxScore:
                     maxScore = score
                     bestMove = move
+                alpha = max(alpha, score)
+                if beta <= alpha:
+                    break
 
-            # logger.info(
-            #     f"maximizing return"
-            # )
             return bestMove, maxScore
         else:
+
             minScore = float("inf")
             bestMove = None
             for move in self.getLegalMoves(advPos, myPos, maxStep, chessBoard):
-                score = (self.minimax(myPos, move[0], depth - 1, maxStep, chessBoard, True))[1]
-
-                # logger.info(
-                #     f"{score[1]} < {minScore}"
-                # )
-
+                score = (self.alphaBeta(myPos, move[0], depth - 1, maxStep, chessBoard, True, alpha, beta))[1]
                 if score < minScore:
                     minScore = score
                     bestMove = move
-            # logger.info(
-            #     f"minimizing return"
-            # )
+                beta = min(beta, score)
+                if beta <= alpha:
+                    break
             return bestMove, minScore
                     
     # Needs optimization
@@ -117,30 +100,23 @@ class StudentAgent(Agent):
 
         legalMoves = set()
         visited = set()
-        queue = [(myPos, maxStep)]
+        queue = deque([(myPos, maxStep)])
 
-        # Case for surrounding squares
-        # BFS
         while queue:
-            currentPos, stepsLeft = queue.pop(0)
+            currentPos, stepsLeft = queue.popleft()
+
+            if currentPos in visited or not self.checkBoundary(currentPos, boardLength) or currentPos == advPos:
+                continue
             visited.add(currentPos)
-            
-            for directionIndex in range(4):
-                #boold = chessBoard[currentPos[0]][currentPos[1]][directionIndex]
-                #print("Boolean: " + str(boold) + " Position: " + str((currentPos[0],currentPos[1], directionIndex)))
-                if not(chessBoard[currentPos[0]][currentPos[1]][directionIndex]):
-                    
-                    deltaX = currentPos[0] + moves[directionIndex][0]
-                    deltaY = currentPos[1] + moves[directionIndex][1]
-                    nextPosition = (deltaX, deltaY)
-                    
-                    if (self.checkBoundary(nextPosition, boardLength)) and (nextPosition != advPos):
-                        if stepsLeft > 0 and (nextPosition not in visited):
+
+            for directionIndex, (dx, dy) in enumerate(moves):
+                if not chessBoard[currentPos[0]][currentPos[1]][directionIndex]:
+                    nextPosition = (currentPos[0] + dx, currentPos[1] + dy)
+                    if nextPosition not in visited:
+                        if stepsLeft > 0:
                             queue.append((nextPosition, stepsLeft - 1))
-                        legalMoves.add((currentPos, directionIndex))
-                    else:
-                        legalMoves.add((currentPos, directionIndex))
-                        
+                    legalMoves.add((currentPos, directionIndex))
+
         return list(legalMoves)
 
     def checkBoundary(self, pos, boardSize):
@@ -149,17 +125,9 @@ class StudentAgent(Agent):
     
     def eval(self, myPos, advPos, chessBoard, maxStep):
         score = 0
-        #boardLength, _, _ = chessBoard.shape
-
-        # Number of legal moves available
         myMoves = len(self.getLegalMoves(myPos, advPos, maxStep, chessBoard))
         advMoves = len(self.getLegalMoves(advPos, myPos, maxStep, chessBoard))
         score += (myMoves - advMoves)
-
-        # logger.info(
-        #     f"score:{score}"
-        # ) 
-
         return score
 
 def print_chessboard(chessboard, player_pos, opponent_pos):
