@@ -95,8 +95,8 @@ class World:
             # Random chessboard size
 
             # CHANGE WHEN DONE
-            #self.board_size = np.random.randint(MIN_BOARD_SIZE, MAX_BOARD_SIZE)
-            self.board_size = 6
+            # self.board_size = np.random.randint(MIN_BOARD_SIZE, MAX_BOARD_SIZE)
+            self.board_size = 12
             logger.info(
                 f"No board size specified. Randomly generating size : {self.board_size}x{self.board_size}"
             )

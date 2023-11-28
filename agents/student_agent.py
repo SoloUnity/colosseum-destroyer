@@ -62,7 +62,7 @@ class StudentAgent(Agent):
             move, _ = self.alphaBeta(my_pos, adv_pos, depth, max_step, chess_board, True, float("-inf"), float("inf"), start_time)
             currentTime = time.time()
 
-            if currentTime - start_time > 1.95:
+            if currentTime - start_time > 1.98:
                 break  # Stop if we're close to the time limit
 
             bestMove = move  # Update best move at this depth
@@ -73,23 +73,30 @@ class StudentAgent(Agent):
     
     def alphaBeta(self, myPos, advPos, depth, maxStep, chessBoard, isMaximizing, alpha, beta, startTime):
         transpositionKey = self.getTranspositionKey(myPos, advPos, chessBoard, isMaximizing)
-    
+        
+        # Check transposition table and update alpha and beta if possible
         if transpositionKey in self.transpositionTable:
             entry = self.transpositionTable[transpositionKey]
             if entry['depth'] >= depth:
-                return entry['bestMove'], entry['score']
-                
+                if entry['flag'] == 'EXACT':
+                    return entry['bestMove'], entry['score']
+                elif entry['flag'] == 'LOWERBOUND':
+                    alpha = max(alpha, entry['score'])
+                elif entry['flag'] == 'UPPERBOUND':
+                    beta = min(beta, entry['score'])
+                if alpha >= beta:
+                    return entry['bestMove'], entry['score']
+                    
         current_time = time.time()
-        if current_time - startTime > 1.95 or depth == 0:
-            return None, self.eval(myPos, advPos, chessBoard, maxStep)
-        # if current_time - startTime > 1.95 or depth == 0 or self.isGameOver(myPos, advPos, chessBoard):
-        #     return None, self.eval(myPos, advPos, chessBoard, maxStep)
-        
+        if current_time - startTime > 1.98 or depth == 0:
+            score = self.eval(myPos, advPos, chessBoard, maxStep)
+            return None, score
+
         if isMaximizing:
             maxScore = float("-inf")
             bestMove = None
             for move in self.getLegalMoves(myPos, advPos, maxStep, chessBoard):
-                score = (self.alphaBeta(move[0], advPos, depth - 1, maxStep, chessBoard, False, alpha, beta, startTime))[1]
+                score = self.alphaBeta(move[0], advPos, depth - 1, maxStep, chessBoard, False, alpha, beta, startTime)[1]
                 if score > maxScore:
                     maxScore = score
                     bestMove = move
@@ -97,35 +104,27 @@ class StudentAgent(Agent):
                 if beta <= alpha:
                     break
 
-            result = bestMove, (maxScore if isMaximizing else minScore)
-            self.transpositionTable[transpositionKey] = {
-                'score': result[1], 
-                'depth': depth, 
-                'bestMove': result[0], 
-                'isMaximizing': isMaximizing
-            }
-            return result
+            # Save to transposition table
+            flag = 'EXACT' if maxScore <= alpha else 'LOWERBOUND'
+            self.transpositionTable[transpositionKey] = {'score': maxScore, 'depth': depth, 'bestMove': bestMove, 'flag': flag}
+            return bestMove, maxScore
         else:
-
             minScore = float("inf")
             bestMove = None
             for move in self.getLegalMoves(advPos, myPos, maxStep, chessBoard):
-                score = (self.alphaBeta(myPos, move[0], depth - 1, maxStep, chessBoard, True, alpha, beta, startTime))[1]
+                score = self.alphaBeta(myPos, move[0], depth - 1, maxStep, chessBoard, True, alpha, beta, startTime)[1]
                 if score < minScore:
                     minScore = score
                     bestMove = move
                 beta = min(beta, score)
                 if beta <= alpha:
                     break
-            
-            result = bestMove, (maxScore if isMaximizing else minScore)
-            self.transpositionTable[transpositionKey] = {
-                'score': result[1], 
-                'depth': depth, 
-                'bestMove': result[0], 
-                'isMaximizing': isMaximizing
-            }
-            return result
+
+            # Save to transposition table
+            flag = 'EXACT' if minScore >= beta else 'UPPERBOUND'
+            self.transpositionTable[transpositionKey] = {'score': minScore, 'depth': depth, 'bestMove': bestMove, 'flag': flag}
+            return bestMove, minScore
+
                     
     # Needs optimization
     def getLegalMoves(self, myPos, advPos, maxStep, chessBoard):
