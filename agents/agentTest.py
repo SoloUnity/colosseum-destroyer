@@ -92,7 +92,6 @@ class MockAgent:
 
         return list(legalMoves)
     
-
     def getLegalMoves4(self, myPos, advPos, maxStep, chessBoard):
         boardLength, _, _ = chessBoard.shape
         moves = ((-1, 0), (0, 1), (1, 0), (0, -1))

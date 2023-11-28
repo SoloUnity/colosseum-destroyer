@@ -26,6 +26,7 @@ class StudentAgent(Agent):
             "d": 2,
             "l": 3,
         }
+        self.cachedLegalMoves = {}
 
 
     def step(self, chess_board, my_pos, adv_pos, max_step):
@@ -48,7 +49,7 @@ class StudentAgent(Agent):
         # time_taken during your search and breaking with the best answer
         # so far when it nears 2 seconds.
         start_time = time.time()
-        depth = 4
+        depth = 3 # Implement variable depth
         move, _ = self.alphaBeta(my_pos, adv_pos, depth, max_step, chess_board, True, float("-inf"), float("inf"))
 
         time_taken = time.time() - start_time
@@ -95,6 +96,12 @@ class StudentAgent(Agent):
                     
     # Needs optimization
     def getLegalMoves(self, myPos, advPos, maxStep, chessBoard):
+
+        key = (myPos, advPos, maxStep, chessBoard.tostring())
+        
+        if key in self.cachedLegalMoves:
+            return self.cachedLegalMoves[key]
+        
         boardLength, _, _ = chessBoard.shape
         moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
 
@@ -109,14 +116,15 @@ class StudentAgent(Agent):
                 continue
             visited.add(currentPos)
 
-            for directionIndex, (dx, dy) in enumerate(moves):
+            for directionIndex, (deltaX, deltaY) in enumerate(moves):
                 if not chessBoard[currentPos[0]][currentPos[1]][directionIndex]:
-                    nextPosition = (currentPos[0] + dx, currentPos[1] + dy)
+                    nextPosition = (currentPos[0] + deltaX, currentPos[1] + deltaY)
                     if nextPosition not in visited:
                         if stepsLeft > 0:
                             queue.append((nextPosition, stepsLeft - 1))
                     legalMoves.add((currentPos, directionIndex))
 
+        self.cachedLegalMoves[key] = list(legalMoves)
         return list(legalMoves)
 
     def checkBoundary(self, pos, boardSize):
@@ -131,13 +139,6 @@ class StudentAgent(Agent):
         return score
 
 def print_chessboard(chessboard, player_pos, opponent_pos):
-    """
-    Converts the chessboard array into a human-readable string format.
-    :param chessboard: A 3D numpy array representing the chessboard.
-    :param player_pos: A tuple representing the player's position.
-    :param opponent_pos: A tuple representing the opponent's position.
-    :return: A string representation of the chessboard.
-    """
 
     horizontal_barrier = "---"
     vertical_barrier = "|"
@@ -250,7 +251,7 @@ def print_chessboard(chessboard, player_pos, opponent_pos):
 #         barrier_dir : int
 #             The direction of the barrier.
 #         """
-#         # Endpoint already has barrier or is border
+#         # Endpoint alreadeltaY has barrier or is border
 #         r, c = end_pos
 #         if self.chess_board[r, c, barrier_dir]:
 #             return False
@@ -400,7 +401,7 @@ def print_chessboard(chessboard, player_pos, opponent_pos):
 #         r, c = my_pos
 #         # Possibilities, any direction such that chess_board is False
 #         allowed_barriers=[i for i in range(0,4) if not self.chess_board[r,c,i]]
-#         # Sanity check, no way to be fully enclosed in a square, else game already ended
+#         # Sanity check, no way to be fully enclosed in a square, else game alreadeltaY ended
 #         assert len(allowed_barriers)>=1 
 #         dir = allowed_barriers[np.random.randint(0, len(allowed_barriers))]
 
@@ -444,7 +445,7 @@ def print_chessboard(chessboard, player_pos, opponent_pos):
 #         r, c = my_pos
 #         # Possibilities, any direction such that chess_board is False
 #         allowed_barriers=[i for i in range(0,4) if not self.chess_board[r,c,i]]
-#         # Sanity check, no way to be fully enclosed in a square, else game already ended
+#         # Sanity check, no way to be fully enclosed in a square, else game alreadeltaY ended
 #         assert len(allowed_barriers)>=1 
 #         dir = allowed_barriers[np.random.randint(0, len(allowed_barriers))]
 
@@ -499,7 +500,7 @@ def print_chessboard(chessboard, player_pos, opponent_pos):
 #         r, c = my_pos
 #         # Possibilities, any direction such that chess_board is False
 #         allowed_barriers=[i for i in range(0,4) if not self.chess_board[r,c,i]]
-#         # Sanity check, no way to be fully enclosed in a square, else game already ended
+#         # Sanity check, no way to be fully enclosed in a square, else game alreadeltaY ended
 #         assert len(allowed_barriers)>=1 
 #         dir = allowed_barriers[np.random.randint(0, len(allowed_barriers))]
 
