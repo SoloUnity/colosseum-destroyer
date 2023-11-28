@@ -2,10 +2,59 @@ import numpy as np
 from collections import deque
 
 class MockAgent:
+
+    def __init__(self):
+        self.cachedLegalMoves = {}
+        self.transpositionTable = {}
+        self.gameOverCache = {}
+
     def checkBoundary(self, pos, boardLength):
         r, c = pos
         return 0 <= r < boardLength and 0 <= c < boardLength
 
+    def isGameOver(self, myPos, advPos, chessBoard):
+
+        boardKey = chessBoard.tostring()
+        if boardKey in self.gameOverCache:
+            return self.gameOverCache[boardKey]
+
+        boardLength, _, _ = chessBoard.shape
+
+        # Union-Find
+        father = dict()
+        for r in range(boardLength):
+            for c in range(boardLength):
+                father[(r, c)] = (r, c)
+
+        def find(pos):
+            if father[pos] != pos:
+                father[pos] = find(father[pos])
+            return father[pos]
+
+        def union(pos1, pos2):
+            father[find(pos1)] = find(pos2)
+
+        # Only check down and right
+        directions = [(0, 1), (1, 0)]  # Right, Down
+        for r in range(boardLength):
+            for c in range(boardLength):
+                for move in directions:
+                    if chessBoard[r, c, 1 if move == (0, 1) else 2]:
+                        continue
+                    pos_a = find((r, c))
+                    pos_b = find((r + move[0], c + move[1]))
+                    if pos_a != pos_b:
+                        union(pos_a, pos_b)
+
+        # Find roots for each player
+        p0_r = find(tuple(myPos))
+        p1_r = find(tuple(advPos))
+
+        # Check if players belong to the same set
+        gameOverResult = p0_r != p1_r
+        self.gameOverCache[boardKey] = gameOverResult
+        return gameOverResult
+    
     def getLegalMoves1(self, myPos, advPos, maxStep, chessBoard, moves):
         boardLength, _, _ = chessBoard.shape
         legal_moves = []
@@ -187,93 +236,93 @@ def print_chessboard(chessboard, player_pos, opponent_pos):
 
 # Create a mock chess board with barriers and test the function
 boardSize = 6
-data = [
-  [[True, False, False, True],
-   [True, False, False, False],
-   [True, False, True, False],
-   [True, False, False, False],
-   [True, False, False, False],
-   [True, True, False, False]],
+# data = [
+#   [[True, False, False, True],
+#    [True, False, False, False],
+#    [True, False, True, False],
+#    [True, False, False, False],
+#    [True, False, False, False],
+#    [True, True, False, False]],
 
-  [[False, False, False, True],
-   [False, False, False, False],
-   [True, False, True, False],
-   [False, False, True, False],
-   [False, False, True, False],
-   [False, True, False, False]],
+#   [[False, False, False, True],
+#    [False, False, False, False],
+#    [True, False, True, False],
+#    [False, False, True, False],
+#    [False, False, True, False],
+#    [False, True, False, False]],
 
-  [[False, False, False, True],
-   [False, True, False, False],
-   [True, False, True, True],
-   [True, False, False, False],
-   [True, False, False, False],
-   [False, True, False, False]],
+#   [[False, False, False, True],
+#    [False, True, False, False],
+#    [True, False, True, True],
+#    [True, False, True, False],
+#    [True, False, False, False],
+#    [False, True, False, False]],
 
-  [[False, False, False, True],
-   [False, True, True, False],
-   [True, False, False, True],
-   [False, True, True, False],
-   [False, False, False, True],
-   [False, True, False, False]],
+#   [[False, False, False, True],
+#    [False, True, True, False],
+#    [True, True, True, True],
+#    [True, True, True, True],
+#    [False, False, False, True],
+#    [False, True, False, False]],
 
-  [[False, False, False, True],
-   [True, False, False, False],
-   [False, False, False, False],
-   [True, False, True, False],
-   [False, False, False, False],
-   [False, True, False, False]],
+#   [[False, False, False, True],
+#    [True, False, False, False],
+#    [True, False, False, False],
+#    [True, False, True, False],
+#    [False, False, False, False],
+#    [False, True, False, False]],
 
-  [[False, False, True, True],
-   [False, False, True, False],
-   [False, False, True, False],
-   [True, False, True, False],
-   [False, False, True, False],
-   [False, True, True, False]]
-]
-
-# [
-#     [[ True, False, False,  True],
-#      [ True, False, False, False],
-#      [ True, False, False, False],
-#      [ True, False, False, False],
-#      [ True, False,  True, False],
-#      [ True,  True, False, False]],
-
-#     [[False, False, False,  True],
-#      [False, False, False, False],
-#      [False, False,  True, False],
-#      [False, False,  True, False],
-#      [ True, False,  True, False],
-#      [False,  True, False, False]],
-
-#     [[False, False, False,  True],
-#      [False, False, False, False],
-#      [ True, False,  True, False],
-#      [ True,  True,  True, False],
-#      [ True, False, False,  True],
-#      [False,  True, False, False]],
-
-#     [[False, False, False,  True],
-#      [False, False, False, False],
-#      [ True, False, False, False],
-#      [ True, False, False, False],
-#      [False,  True, False, False],
-#      [False,  True, False,  True]],
-
-#     [[False, False, False,  True],
-#      [False, False,  True, False],
-#      [False, False, False, False],
-#      [False, False, False, False],
-#      [False, False, False, False],
-#      [False,  True, False, False]],
-
-#     [[False, False,  True,  True],
-#      [ True, False,  True, False],
-#      [False, False,  True, False],
-#      [False, False,  True, False],
-#      [False, False,  True, False],
-#      [False,  True,  True, False]]
+#   [[False, False, True, True],
+#    [False, False, True, False],
+#    [False, False, True, False],
+#    [True, False, True, False],
+#    [False, False, True, False],
+#    [False, True, True, False]]
 # ]
+
+data = [
+    [[ True, False, False,  True],
+     [ True, False, False, False],
+     [ True, False, False, False],
+     [ True, False, False, False],
+     [ True, False,  True, False],
+     [ True,  True, False, False]],
+
+    [[False, False, False,  True],
+     [False, False, False, False],
+     [False, False,  True, False],
+     [False, False,  True, False],
+     [ True, False,  True, False],
+     [False,  True, False, False]],
+
+    [[False, False, False,  True],
+     [False, False, False, False],
+     [ True, False,  True, False],
+     [ True,  True,  True, False],
+     [ True, False, False,  True],
+     [False,  True, False, False]],
+
+    [[False, False, False,  True],
+     [False, False, False, False],
+     [ True, False, False, False],
+     [ True, False, False, False],
+     [False,  True, False, False],
+     [False,  True, False,  True]],
+
+    [[False, False, False,  True],
+     [False, False,  True, False],
+     [False, False, False, False],
+     [False, False, False, False],
+     [False, False, False, False],
+     [False,  True, False, False]],
+
+    [[False, False,  True,  True],
+     [ True, False,  True, False],
+     [False, False,  True, False],
+     [False, False,  True, False],
+     [False, False,  True, False],
+     [False,  True,  True, False]]
+]
 
 # Initialize the chessboard with False (equivalent to 0) values
 chessBoard = np.array(data, dtype=bool)
@@ -287,7 +336,7 @@ chessBoard = np.array(data, dtype=bool)
 agent = MockAgent()
 # myPos = (2, 2)
 # advPos = (3, 5)
-myPos = (3, 2)
+myPos = (3, 4)
 advPos = (3, 3)
 maxStep = 1
 
@@ -296,6 +345,8 @@ print(print_chessboard(chessBoard, myPos, advPos))
 legalMoves = agent.getLegalMoves4(myPos, advPos, maxStep, chessBoard)
 for i in sorted(legalMoves):
     print (i)
+
+print(agent.isGameOver(myPos, advPos, chessBoard))
 
 
 
