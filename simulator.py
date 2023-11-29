@@ -4,6 +4,8 @@ from utils import all_logging_disabled
 import logging
 from tqdm import tqdm
 import numpy as np
+import sys
+import time
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 
@@ -78,8 +80,13 @@ class Simulator:
     def run(self, swap_players=False, board_size=None):
         self.reset(swap_players=swap_players, board_size=board_size)
         is_end, p0_score, p1_score = self.world.step()
+        runNum = 0
         while not is_end:
             is_end, p0_score, p1_score = self.world.step()
+            runNum += 1
+            sys.stdout.write("\r" + "Current Step:" + str(runNum))
+            sys.stdout.flush()
+
         logger.info(
             f"Run finished. Player {PLAYER_1_NAME}: {p0_score}, Player {PLAYER_2_NAME}: {p1_score}"
         )
@@ -100,6 +107,7 @@ class Simulator:
             for i in tqdm(range(self.args.autoplay_runs)):
                 swap_players = i % 2 == 0
                 board_size = np.random.randint(args.board_size_min, args.board_size_max)
+                print("Board Size: " + str(board_size))
                 p0_score, p1_score, p0_time, p1_time = self.run(
                     swap_players=swap_players, board_size=board_size
                 )
@@ -112,23 +120,50 @@ class Simulator:
                     )
                 if p0_score > p1_score:
                     p1_win_count += 1
+                    print("\n" + "Player " + str(PLAYER_1_NAME) +" wins")
                 elif p0_score < p1_score:
                     p2_win_count += 1
+                    print("\n" + "Player" + str(PLAYER_2_NAME) +"wins")
                 else:  # Tie
                     p1_win_count += 1
                     p2_win_count += 1
+                    print("\n" + "Tie")
                 p1_times.extend(p0_time)
                 p2_times.extend(p1_time)
+                
 
         logger.info(
-            f"Player {PLAYER_1_NAME} win percentage: {p1_win_count / self.args.autoplay_runs}. Maxium turn time was {np.round(np.max(p1_times),5)} seconds.")
+            f"Player {PLAYER_1_NAME} win percentage: {(p1_win_count / self.args.autoplay_runs) * 100}. Maxium turn time was {np.round(np.max(p1_times),5)} seconds.")
         logger.info(
-            f"Player {PLAYER_2_NAME} win percentage: {p2_win_count / self.args.autoplay_runs}. Maxium turn time was {np.round(np.max(p2_times),5)} seconds.")
+            f"Player {PLAYER_2_NAME} win percentage: {(p2_win_count / self.args.autoplay_runs) * 100}. Maxium turn time was {np.round(np.max(p2_times),5)} seconds.")
+
+# if __name__ == "__main__":
+#     args = get_args()
+#     simulator = Simulator(args)
+#     if args.autoplay:
+#         simulator.autoplay()
+#     else:
+#         simulator.run()
 
 if __name__ == "__main__":
-    args = get_args()
+    # Manually create an argparse.Namespace object with desired default values
+    args = argparse.Namespace(
+        player_1="random_agent",
+        player_2="student_agent",
+        board_size=None,  # Assuming default value from get_args()
+        board_size_min=6,  # Assuming default value from get_args()
+        board_size_max=12,  # Assuming default value from get_args()
+        display=False,  # Assuming default value from get_args()
+        display_delay=0.4,  # Assuming default value from get_args()
+        display_save=False,  # Assuming default value from get_args()
+        display_save_path="plots/",  # Assuming default value from get_args()
+        autoplay=True,  # Assuming default value from get_args()
+        autoplay_runs=3  # Assuming default value from get_args()
+    )
+
     simulator = Simulator(args)
     if args.autoplay:
         simulator.autoplay()
     else:
         simulator.run()
+

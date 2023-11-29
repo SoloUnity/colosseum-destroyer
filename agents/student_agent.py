@@ -68,10 +68,11 @@ class StudentAgent(Agent):
             bestMove = move  # Update best move at this depth
             depth += 1  # Increase depth for next iteration
 
-        print("Depth " + str(depth))
         return bestMove
     
     def alphaBeta(self, myPos, advPos, depth, maxStep, chessBoard, isMaximizing, alpha, beta, startTime):
+        # Using this as reference: http://people.csail.mit.edu/plaat/mtdf.html#abmem
+
         transpositionKey = self.getTranspositionKey(myPos, advPos, chessBoard, isMaximizing)
         
         # Check transposition table and update alpha and beta if possible
@@ -171,6 +172,12 @@ class StudentAgent(Agent):
         myMoves = len(self.getLegalMoves(myPos, advPos, maxStep, chessBoard))
         advMoves = len(self.getLegalMoves(advPos, myPos, maxStep, chessBoard))
         score += (myMoves - advMoves)
+
+        # Distance from myPos to advPos
+        # Distance to walls
+        # Distance to all barriers
+        # Gaps between closest barriers 
+        
         return score
 
     def isGameOver(self, myPos, advPos, chessBoard):
