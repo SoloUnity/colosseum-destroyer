@@ -168,25 +168,140 @@ class StudentAgent(Agent):
     
     def getTranspositionKey(self, myPos, advPos, chessBoard, isMaximizing):
         return (myPos, advPos, chessBoard.tostring(), isMaximizing)
-
+    
     def eval(self, myPos, advPos, chessBoard, maxStep):
-        score = 0
-        boardLength, _, _ = chessBoard.shape
-        centerPos = boardLength / 2
-        myDist = math.sqrt(((myPos[0] + 1 - centerPos) ** 2) + ((myPos[1] + 1 - centerPos) ** 2))
-        advDist = math.sqrt(((advPos[0] + 1 - centerPos) ** 2) + ((advPos[1] + 1 - centerPos) ** 2))
+        score = (self.potentialExpansion(myPos, advPos, maxStep, chessBoard) * 0
+        + self.distanceFromCenter(myPos, advPos, chessBoard) * 1
+        + self.longestLineZone(myPos, advPos, chessBoard) * 0)
 
-        # myMoves = len(self.getLegalMoves(myPos, advPos, maxStep, chessBoard))
-        # advMoves = len(self.getLegalMoves(advPos, myPos, maxStep, chessBoard))
-        score += (advDist - myDist)
-
-        # Distance from myPos to advPos
-        # Distance to walls
-        # Distance to all barriers
-        # Gaps between closest barriers 
-        
         return score
 
+    def potentialExpansion(self, myPos, advPos, maxStep, chessBoard):
+        myMoves = len(self.getLegalMoves(myPos, advPos, maxStep, chessBoard))
+        advMoves = len(self.getLegalMoves(advPos, myPos, maxStep, chessBoard))
+        return (myMoves - advMoves)
+    
+    def distanceFromCenter(self, myPos, advPos, chessBoard):
+        centerPos = (chessBoard.shape[0] - 1) / 2
+        myDist = abs(myPos[0] - centerPos) + abs(myPos[1] - centerPos)
+        advDist = abs(advPos[0] - centerPos) + abs(advPos[1] - centerPos)
+        return (advDist - myDist)
+    
+    def longestLineZone(self, myPos, advPos, chessBoard):
+        newBoard = deepcopy(chessBoard)
+        boardLength, _, _ = newBoard.shape
+        moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
+
+        longestLine = self.findLongestLine(myPos, advPos, newBoard, boardLength, moves)
+
+        # No barriers on the board
+        if any(line is None for line in longestLine):
+            return 0
+        
+        self.extendLine(longestLine[0], newBoard, boardLength, moves)
+        self.extendLine(longestLine[1], newBoard, boardLength, moves)
+
+        myScore, advScore = self.computeScore(myPos, advPos, newBoard, boardLength, moves)
+
+        return (myScore - advScore)
+    
+    def findLongestLine(self, myPos, advPos, chessBoard, boardLength, moves):
+        # Find longest line
+        # for every barrier that is not a wall (only check down and right)
+            # dfs to find longest line: 3 to check at every step
+            # keep track of visited barriers
+        visited = set()
+        longest_line = []
+
+        for r in range(boardLength):
+            for c in range(boardLength):
+                if (r,c,1) not in visited:
+                    if chessBoard[r, c, 1]:
+                        local_line = [(r, c, 1)]
+                    elif chessBoard[r, c, 2]:
+                        local_line = [(r, c, 2)]
+                    else:
+                        continue
+                    
+                    # check right cell down
+                    # check down cell right
+
+                    self.barrierDFS(r, c, visited, local_line)
+
+                        
+        
+        
+
+        return longest
+    
+    def barrierDFS(r, c, visited, barrier):
+        pass
+    
+    def extendLine(self, line, chessBoard, boardLength, moves):
+            # for first and last barrier of line
+            # use min from wall of x,y coord and extend in that direction
+        return chessBoard
+    
+    def computeScore(self, myPos, advPos, chessBoard, boardLength, moves):
+        # Count number of squares in each zone
+
+        # # Union-Find
+        # father = dict()
+        # for r in range(self.board_size):
+        #     for c in range(self.board_size):
+        #         father[(r, c)] = (r, c)
+
+        # def find(pos):
+        #     if father[pos] != pos:
+        #         father[pos] = find(father[pos])
+        #     return father[pos]
+
+        # def union(pos1, pos2):
+        #     father[pos1] = pos2
+
+        # for r in range(self.board_size):
+        #     for c in range(self.board_size):
+        #         for dir, move in enumerate(
+        #             self.moves[1:3]
+        #         ):  # Only check down and right
+        #             if self.chess_board[r, c, dir + 1]:
+        #                 continue
+        #             pos_a = find((r, c))
+        #             pos_b = find((r + move[0], c + move[1]))
+        #             if pos_a != pos_b:
+        #                 union(pos_a, pos_b)
+
+        # for r in range(self.board_size):
+        #     for c in range(self.board_size):
+        #         find((r, c))
+        # p0_r = find(tuple(self.p0_pos))
+        # p1_r = find(tuple(self.p1_pos))
+        # p0_score = list(father.values()).count(p0_r)
+        # p1_score = list(father.values()).count(p1_r)
+        # if p0_r == p1_r:
+        #     return False, p0_score, p1_score
+        # player_win = None
+        # win_blocks = -1
+        # if p0_score > p1_score:
+        #     player_win = 0
+        #     win_blocks = p0_score
+        # elif p0_score < p1_score:
+        #     player_win = 1
+        #     win_blocks = p1_score
+        # else:
+        #     player_win = -1  # Tie
+        # if player_win >= 0:
+        #     logging.info(
+        #         f"Game ends! Player {self.player_names[player_win]} wins having control over {win_blocks} blocks!"
+        #     )
+        # else:
+        #     logging.info("Game ends! It is a Tie!")
+        # return True, p0_score, p1_score
+
+        
+        # return (myScore, advScore) 
+        return None
+    
     def isGameOver(self, myPos, advPos, chessBoard):
         boardKey = chessBoard.tostring()
         if boardKey in self.gameOverCache:
