@@ -68,7 +68,7 @@ class StudentAgent(Agent):
                 bestScore = score
 
             if currentTime - start_time > 1.98:
-                break  # Stop if we're close to the time limit
+                break  # Stop if we"re close to the time limit
 
             depth += 1  # Increase depth for next iteration
 
@@ -80,7 +80,18 @@ class StudentAgent(Agent):
         if self.cutoff(myPos, advPos, depth, chessBoard, startTime):
             return self.eval(myPos, advPos, chessBoard, maxStep), None
 
-        #self.checkTable(myPos, advPos, chessBoard, depth)
+        transpositionKey = self.getTranspositionKey(myPos, advPos, chessBoard, True)
+        if transpositionKey in self.transpositionTable:
+            entry = self.transpositionTable[transpositionKey]
+            if entry["depth"] >= depth:
+                if entry["flag"] == "EXACT":
+                    return entry["score"], entry["bestMove"]
+                elif entry["flag"] == "LOWERBOUND":
+                    alpha = max(alpha, entry["score"])
+                elif entry["flag"] == "UPPERBOUND":
+                    beta = min(beta, entry["score"])
+                if alpha >= beta:
+                    return entry["score"], entry["bestMove"]
 
         maxScore = float("-inf")
         bestMove = None
@@ -92,13 +103,29 @@ class StudentAgent(Agent):
             alpha = max(alpha, score)
             if alpha >= beta:
                 break
+
+        # Save to transposition table
+        flag = "EXACT" if maxScore <= alpha else "LOWERBOUND"
+        self.transpositionTable[transpositionKey] = {"score": maxScore, "depth": depth, "bestMove": bestMove, "flag": flag}
+        
         return maxScore, bestMove
 
     def MinValue(self, myPos, advPos, depth, maxStep, chessBoard, alpha, beta, startTime):
         if self.cutoff(myPos, advPos, depth, chessBoard, startTime):
             return self.eval(myPos, advPos, chessBoard, maxStep), None
 
-        #self.checkTable(myPos, advPos, chessBoard, depth)
+        transpositionKey = self.getTranspositionKey(myPos, advPos, chessBoard, False)
+        if transpositionKey in self.transpositionTable:
+            entry = self.transpositionTable[transpositionKey]
+            if entry["depth"] >= depth:
+                if entry["flag"] == "EXACT":
+                    return entry["score"], entry["bestMove"]
+                elif entry["flag"] == "LOWERBOUND":
+                    alpha = max(alpha, entry["score"])
+                elif entry["flag"] == "UPPERBOUND":
+                    beta = min(beta, entry["score"])
+                if alpha >= beta:
+                    return entry["score"], entry["bestMove"]
 
         minScore = float("inf")
         bestMove = None
@@ -110,6 +137,11 @@ class StudentAgent(Agent):
             beta = min(beta, score)
             if alpha >= beta:
                 return minScore, bestMove
+            
+        # Save to transposition table
+        flag = "EXACT" if minScore >= beta else "UPPERBOUND"
+        self.transpositionTable[transpositionKey] = {"score": minScore, "depth": depth, "bestMove": bestMove, "flag": flag}
+
         return minScore, bestMove
 
     def cutoff(self, myPos, advPos, depth, chessBoard, startTime):
@@ -118,17 +150,7 @@ class StudentAgent(Agent):
 
         # return current_time - startTime > 1.98 or depth == 0 or self.isGameOver(myPos, advPos, chessBoard)
     
-    def checkTable(self, myPos, advPos, chessBoard, isMaximizing, depth):
-        transpositionKey = self.getTranspositionKey(myPos, advPos, chessBoard, True)
-        if transpositionKey in self.transpositionTable:
-            lowerbound, upperbound = self.transpositionTable[transpositionKey]
-            if lowerbound >= beta:
-                return lowerbound, None
-            if upperbound <= alpha:
-                return upperbound, None
-            alpha = max(alpha, lowerbound)
-            beta = min(beta, upperbound)
-                    
+
     # Needs optimization
     def getLegalMoves(self, myPos, advPos, maxStep, chessBoard):
 
@@ -205,34 +227,34 @@ class StudentAgent(Agent):
 
         return (myScore - advScore)
     
-    def findLongestLine(self, myPos, advPos, chessBoard, boardLength, moves):
-        # Find longest line
-        # for every barrier that is not a wall (only check down and right)
-            # dfs to find longest line: 3 to check at every step
-            # keep track of visited barriers
-        visited = set()
-        longest_line = []
+    # def findLongestLine(self, myPos, advPos, chessBoard, boardLength, moves):
+    #     # Find longest line
+    #     # for every barrier that is not a wall (only check down and right)
+    #         # dfs to find longest line: 3 to check at every step
+    #         # keep track of visited barriers
+    #     visited = set()
+    #     longest_line = []
 
-        for r in range(boardLength):
-            for c in range(boardLength):
-                if (r,c,1) not in visited:
-                    if chessBoard[r, c, 1]:
-                        local_line = [(r, c, 1)]
-                    elif chessBoard[r, c, 2]:
-                        local_line = [(r, c, 2)]
-                    else:
-                        continue
+    #     for r in range(boardLength):
+    #         for c in range(boardLength):
+    #             if (r,c,1) not in visited:
+    #                 if chessBoard[r, c, 1]:
+    #                     local_line = [(r, c, 1)]
+    #                 elif chessBoard[r, c, 2]:
+    #                     local_line = [(r, c, 2)]
+    #                 else:
+    #                     continue
                     
-                    # check right cell down
-                    # check down cell right
+    #                 # check right cell down
+    #                 # check down cell right
 
-                    self.barrierDFS(r, c, visited, local_line)
+    #                 self.barrierDFS(r, c, visited, local_line)
 
                         
         
         
 
-        return longest
+    #     return longest
     
     def barrierDFS(r, c, visited, barrier):
         pass
