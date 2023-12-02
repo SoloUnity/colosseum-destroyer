@@ -148,9 +148,9 @@ class Simulator:
 if __name__ == "__main__":
     # Manually create an argparse.Namespace object with desired default values
     args = argparse.Namespace(
-        player_1="random_agent",
+        player_1="human_agent",
         player_2="student_agent",
-        board_size=12,  # Assuming default value from get_args()
+        board_size=8,  # Assuming default value from get_args()
         board_size_min=6,  # Assuming default value from get_args()
         board_size_max=12,  # Assuming default value from get_args()
         display=True,  # Assuming default value from get_args()

@@ -192,9 +192,12 @@ class StudentAgent(Agent):
         return (myPos, advPos, chessBoard.tostring(), isMaximizing)
     
     def eval(self, myPos, advPos, chessBoard, maxStep):
-        score = (self.potentialExpansion(myPos, advPos, maxStep, chessBoard) * 0
-        + self.distanceFromCenter(myPos, advPos, chessBoard) * 1
-        + self.longestLineZone(myPos, advPos, chessBoard) * 0)
+        control = self.zoneArea(myPos, advPos, chessBoard)
+
+        score = (self.potentialExpansion(myPos, advPos, maxStep, chessBoard) * 0.3
+        + self.distanceFromCenter(myPos, advPos, chessBoard) * 0.1
+        + control * 0.2
+        + self.zoneBarriers(myPos, advPos, chessBoard, control) * 0.3)
 
         return score
 
@@ -209,120 +212,150 @@ class StudentAgent(Agent):
         advDist = abs(advPos[0] - centerPos) + abs(advPos[1] - centerPos)
         return (advDist - myDist)
     
-    def longestLineZone(self, myPos, advPos, chessBoard):
-        newBoard = deepcopy(chessBoard)
-        boardLength, _, _ = newBoard.shape
-        moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
+    def zoneArea(self, myPos, advPos, chessBoard):
+        if myPos[0] > advPos[0]:
+            midPosX = (myPos[0] - advPos[0]) / 2 + advPos[0]
+        else:
+            midPosX = (advPos[0] - myPos[0]) / 2 + myPos[0]
 
-        longestLine = self.findLongestLine(myPos, advPos, newBoard, boardLength, moves)
+        if myPos[1] > advPos[1]:
+            midPosY = (myPos[1] - advPos[1]) / 2 + advPos[1]
+        else:
+            midPosY = (advPos[1] - myPos[1]) / 2 + myPos[1]
 
-        # No barriers on the board
-        if any(line is None for line in longestLine):
+        myZone = None
+        advZone = None
+
+        # Determine the area of the players' zones
+        if myPos[0] == advPos[0]:
+            if myPos[1] > midPosY:
+                myZone = 6    
+                advZone = 5
+            else:
+                myZone = 5
+                advZone = 6
+
+        elif myPos[1] == advPos[1]:
+            if myPos[0] > midPosX:
+                myZone = 8
+                advZone = 7
+            else:
+                myZone = 7
+                advZone = 8
+            
+        elif myPos[0] > midPosX:
+            if myPos[1] > midPosY:
+                myZone = 4
+                advZone = 2
+            else:
+                myZone = 3
+                advZone = 1
+
+        else:
+            if myPos[1] > midPosY:
+                myZone = 1
+                advZone = 3
+
+            else:
+                myZone = 2
+                advZone = 4
+                
+        myMap = self.determineZones(chessBoard, myZone, midPosX, midPosY)
+        advMap = self.determineZones(chessBoard, advZone, midPosX, midPosY)
+        myArea = (math.floor(myMap[1]) - math.ceil(myMap[0]) + 1) * (math.floor(myMap[3]) - math.ceil(myMap[2]) + 1)
+        advArea = (math.floor(advMap[1]) - math.ceil(advMap[0]) + 1) * (math.floor(advMap[3]) - math.ceil(advMap[2]) + 1)
+
+        return (myArea - advArea)
+
+
+    def determineZones(self, chessBoard, zone, midPosX, midPosY):
+        startX, endX, startY, endY = 0, 0, 0, 0
+        boardLength, _, _ = chessBoard.shape
+        boardLength -= 1
+
+        if zone == 1:   # Top-left quadrant
+            startX = 0
+            endX = midPosX
+            startY = midPosY
+            endY = boardLength
+        
+        elif zone == 2: # Top-right quadrant
+            startX = 0
+            endX = midPosX
+            startY = 0
+            endY = midPosY
+        
+        elif zone == 3: # Bottom-right quadrant
+            startX = midPosX
+            endX = boardLength
+            startY = 0
+            endY = midPosY
+
+        elif zone == 4: # Bottom-left quadrant
+            startX = midPosX
+            endX = boardLength
+            startY = midPosY
+            endY = boardLength
+
+        elif zone == 5: # Left half
+            startX = 0
+            endX = boardLength
+            startY = 0
+            endY = midPosY
+      
+        elif zone == 6: # Right half
+            startX = 0
+            endX = boardLength
+            startY = midPosY
+            endY = boardLength
+
+        elif zone == 7: # Top half
+            startX = 0
+            endX = midPosX
+            startY = 0
+            endY = boardLength
+
+        elif zone == 8: # Bottom half
+            startX = midPosX
+            endX = boardLength
+            startY = 0
+            endY = boardLength
+            
+        return (startX, endX, startY, endY)
+    
+    def zoneBarriers(self, myPos, advPos, chessBoard, control):
+        if control == 0:
             return 0
         
-        self.extendLine(longestLine[0], newBoard, boardLength, moves)
-        self.extendLine(longestLine[1], newBoard, boardLength, moves)
+        boardLength, _, _ = chessBoard.shape
+        count = 0
 
-        myScore, advScore = self.computeScore(myPos, advPos, newBoard, boardLength, moves)
+        if myPos[0] > advPos[0]:
+            startX = advPos[0]
+            endX = myPos[0]
+        else:
+            startX = myPos[0]
+            endX = advPos[0]
 
-        return (myScore - advScore)
+        if myPos[1] > advPos[1]:
+            startY = advPos[1]
+            endY = myPos[1]
+        else:
+            startY = myPos[1]
+            endY = advPos[1]
+
+        for r in range(startX, endX):
+            for c in range(startY, endY):
+                if chessBoard[r, c, 1]:
+                    count += 1
+                if chessBoard[r, c, 2]:
+                    count += 1
     
-    # def findLongestLine(self, myPos, advPos, chessBoard, boardLength, moves):
-    #     # Find longest line
-    #     # for every barrier that is not a wall (only check down and right)
-    #         # dfs to find longest line: 3 to check at every step
-    #         # keep track of visited barriers
-    #     visited = set()
-    #     longest_line = []
+        if control > 0:
+            return count
 
-    #     for r in range(boardLength):
-    #         for c in range(boardLength):
-    #             if (r,c,1) not in visited:
-    #                 if chessBoard[r, c, 1]:
-    #                     local_line = [(r, c, 1)]
-    #                 elif chessBoard[r, c, 2]:
-    #                     local_line = [(r, c, 2)]
-    #                 else:
-    #                     continue
-                    
-    #                 # check right cell down
-    #                 # check down cell right
-
-    #                 self.barrierDFS(r, c, visited, local_line)
-
-                        
-        
-        
-
-    #     return longest
-    
-    def barrierDFS(r, c, visited, barrier):
-        pass
-    
-    def extendLine(self, line, chessBoard, boardLength, moves):
-            # for first and last barrier of line
-            # use min from wall of x,y coord and extend in that direction
-        return chessBoard
-    
-    def computeScore(self, myPos, advPos, chessBoard, boardLength, moves):
-        # Count number of squares in each zone
-
-        # # Union-Find
-        # father = dict()
-        # for r in range(self.board_size):
-        #     for c in range(self.board_size):
-        #         father[(r, c)] = (r, c)
-
-        # def find(pos):
-        #     if father[pos] != pos:
-        #         father[pos] = find(father[pos])
-        #     return father[pos]
-
-        # def union(pos1, pos2):
-        #     father[pos1] = pos2
-
-        # for r in range(self.board_size):
-        #     for c in range(self.board_size):
-        #         for dir, move in enumerate(
-        #             self.moves[1:3]
-        #         ):  # Only check down and right
-        #             if self.chess_board[r, c, dir + 1]:
-        #                 continue
-        #             pos_a = find((r, c))
-        #             pos_b = find((r + move[0], c + move[1]))
-        #             if pos_a != pos_b:
-        #                 union(pos_a, pos_b)
-
-        # for r in range(self.board_size):
-        #     for c in range(self.board_size):
-        #         find((r, c))
-        # p0_r = find(tuple(self.p0_pos))
-        # p1_r = find(tuple(self.p1_pos))
-        # p0_score = list(father.values()).count(p0_r)
-        # p1_score = list(father.values()).count(p1_r)
-        # if p0_r == p1_r:
-        #     return False, p0_score, p1_score
-        # player_win = None
-        # win_blocks = -1
-        # if p0_score > p1_score:
-        #     player_win = 0
-        #     win_blocks = p0_score
-        # elif p0_score < p1_score:
-        #     player_win = 1
-        #     win_blocks = p1_score
-        # else:
-        #     player_win = -1  # Tie
-        # if player_win >= 0:
-        #     logging.info(
-        #         f"Game ends! Player {self.player_names[player_win]} wins having control over {win_blocks} blocks!"
-        #     )
-        # else:
-        #     logging.info("Game ends! It is a Tie!")
-        # return True, p0_score, p1_score
-
-        
-        # return (myScore, advScore) 
-        return None
+        else: 
+            return -count
     
     def isGameOver(self, myPos, advPos, chessBoard):
         boardKey = chessBoard.tostring()
