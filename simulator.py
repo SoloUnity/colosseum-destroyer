@@ -148,17 +148,17 @@ class Simulator:
 if __name__ == "__main__":
     # Manually create an argparse.Namespace object with desired default values
     args = argparse.Namespace(
-        player_1="human_agent",
+        player_1="second_agent",
         player_2="student_agent",
-        board_size=8,  # Assuming default value from get_args()
+        board_size=6,  # Assuming default value from get_args()
         board_size_min=6,  # Assuming default value from get_args()
         board_size_max=12,  # Assuming default value from get_args()
         display=True,  # Assuming default value from get_args()
         display_delay=0.4,  # Assuming default value from get_args()
         display_save=False,  # Assuming default value from get_args()
         display_save_path="plots/",  # Assuming default value from get_args()
-        autoplay=False,  # Assuming default value from get_args()
-        autoplay_runs=3  # Assuming default value from get_args()
+        autoplay=True,  # Assuming default value from get_args()
+        autoplay_runs=5  # Assuming default value from get_args()
     )
 
     simulator = Simulator(args)

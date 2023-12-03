@@ -56,7 +56,7 @@ class StudentAgent(Agent):
 
         start_time = time.time()
         depth = 1
-        bestScore = 0
+        bestScore = -9999
         bestMove = None
 
         while True:
@@ -196,8 +196,8 @@ class StudentAgent(Agent):
 
         score = (self.potentialExpansion(myPos, advPos, maxStep, chessBoard) * 0.3
         + self.distanceFromCenter(myPos, advPos, chessBoard) * 0.1
-        + control * 0.2
-        + self.zoneBarriers(myPos, advPos, chessBoard, control) * 0.3)
+        + control * 0.4
+        + self.zoneBarriers(myPos, advPos, chessBoard, control) * 0.2)
 
         return score
 
@@ -266,7 +266,6 @@ class StudentAgent(Agent):
         advArea = (math.floor(advMap[1]) - math.ceil(advMap[0]) + 1) * (math.floor(advMap[3]) - math.ceil(advMap[2]) + 1)
 
         return (myArea - advArea)
-
 
     def determineZones(self, chessBoard, zone, midPosX, midPosY):
         startX, endX, startY, endY = 0, 0, 0, 0
