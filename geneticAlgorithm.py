@@ -50,37 +50,25 @@ def adjust_weight_range():
 
     print(f"Initial weight range adjusted to +/-{RANGE_LIMIT}")
 
+# Adjusted evaluate function
+def evaluate(player_1_weights, player_2_weights):
+    local_args = argparse.Namespace(**vars(args))
+    local_args.player_1_weights = player_1_weights
+    local_args.player_2_weights = player_2_weights
+    p1_win_count, p2_win_count = Simulator(local_args).autoplay()
+    return p1_win_count - p2_win_count,
+
+# Adjusted evaluate_with_annealing function
+def evaluate_with_annealing(player_1_weights, temperature):
+    player_2_weights = np.random.uniform(-RANGE_LIMIT, RANGE_LIMIT, WEIGHTS_PER_PLAYER) if random.random() < temperature else STARTING_WEIGHTS[WEIGHTS_PER_PLAYER:]
+    return evaluate(player_1_weights, player_2_weights)
+
 # Call the function to adjust range based on starting weights
 adjust_weight_range()
 
 def log_best_weights(best_weights, generation):
     with open(os.path.join(LOG_DIR, f"best_weights_gen_{generation}.txt"), 'w') as f:
         f.write(str(best_weights) + "\n")
-
-# Create fitness function
-def evaluate(individual):
-    player_1_weights = individual[:WEIGHTS_PER_PLAYER]
-    # Randomize opponent's weights
-    player_2_weights = np.random.uniform(-RANGE_LIMIT, RANGE_LIMIT, WEIGHTS_PER_PLAYER)
-    local_args = argparse.Namespace(**vars(args))
-    local_args.player_1_weights = player_1_weights
-    local_args.player_2_weights = player_2_weights
-    p1_win_count, p2_win_count = Simulator(local_args).autoplay()
-    return p1_win_count - p2_win_count,
-
-def evaluate_with_annealing(individual, temperature):
-    player_1_weights = individual[:WEIGHTS_PER_PLAYER]
-    player_2_weights = individual[WEIGHTS_PER_PLAYER:]
-
-    # Simulated annealing for opponent's weights
-    if random.random() < temperature:
-        player_2_weights = np.random.uniform(-RANGE_LIMIT, RANGE_LIMIT, WEIGHTS_PER_PLAYER)
-
-    local_args = argparse.Namespace(**vars(args))
-    local_args.player_1_weights = player_1_weights
-    local_args.player_2_weights = player_2_weights
-    p1_win_count, p2_win_count = Simulator(local_args).autoplay()
-    return p1_win_count - p2_win_count,
 
 # Set up DEAP
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
@@ -100,13 +88,18 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 
 historical_best = []
 
+
+
+# Main function with all changes
 def main():
     # Ensure log directory exists
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
 
     # Setup the pool of workers
-    pool = multiprocessing.Pool()
+    num_processes = 4  # Example number, can be set as needed
+    pool = multiprocessing.Pool(processes=num_processes)
+
     toolbox.register("map", pool.map)
 
     # Genetic Algorithm
@@ -120,7 +113,7 @@ def main():
     temperature = 1.0  # Initial temperature for simulated annealing
 
     for gen in range(NUM_GENERATIONS):
-        # If historical best players exist, use one as the opponent
+        # Use a historical best player as the opponent after a certain number of generations
         if gen >= 10 and historical_best:
             historical_opponent = random.choice(historical_best)
             for ind in population:
@@ -128,14 +121,12 @@ def main():
 
         offspring = algorithms.varAnd(population, toolbox, cxpb=CROSSOVER_RATE, mutpb=MUTATION_RATE)
         
-        # Evaluate offspring with annealing and randomized opponent weights
+        # Evaluate offspring using annealing or normal evaluation
         for ind in offspring:
-            player_1_weights = ind[:WEIGHTS_PER_PLAYER]
             if random.random() < temperature:  # Apply simulated annealing
-                player_2_weights = np.random.uniform(-RANGE_LIMIT, RANGE_LIMIT, WEIGHTS_PER_PLAYER)
+                ind.fitness.values = evaluate_with_annealing(ind[:WEIGHTS_PER_PLAYER], temperature)
             else:
-                player_2_weights = ind[WEIGHTS_PER_PLAYER:]
-            ind.fitness.values = evaluate(player_1_weights, player_2_weights)
+                ind.fitness.values = evaluate(ind[:WEIGHTS_PER_PLAYER], ind[WEIGHTS_PER_PLAYER:])
 
         # Update population
         population = toolbox.select(offspring, k=len(population))
@@ -148,6 +139,8 @@ def main():
         # Save best player of this generation in historical best
         if gen % 10 == 0:
             historical_best.append(best_ind[:WEIGHTS_PER_PLAYER])
+            log_best_weights(best_ind[:WEIGHTS_PER_PLAYER], f"historical_best_gen_{gen}")
+
 
         # Decrease temperature for simulated annealing
         temperature *= 0.99
