@@ -7,7 +7,7 @@ import multiprocessing
 import numpy as np
 
 # Genetic Algorithm parameters
-POPULATION_SIZE = 5
+POPULATION_SIZE = 10
 NUM_GENERATIONS = 50
 MUTATION_RATE = 0.2
 CROSSOVER_RATE = 0.8
@@ -65,13 +65,9 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 global temperature
 temperature = 1.0
 
-def evaluate(individual, historical_best, gen):
+def evaluate(individual):
     player_1_weights = individual[:WEIGHTS_PER_PLAYER]
-
-    # Use historical best weights for player 2 in some evaluations
-    if gen >= 10 and historical_best and random.random() < 0.5:
-        player_2_weights = random.choice(historical_best)
-    elif random.random() < temperature:
+    if random.random() < temperature:
         player_2_weights = np.random.uniform(-RANGE_LIMIT, RANGE_LIMIT, WEIGHTS_PER_PLAYER)
     else:
         player_2_weights = individual[WEIGHTS_PER_PLAYER:]
@@ -91,7 +87,7 @@ def main():
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
 
-    num_processes = multiprocessing.cpu_count()
+    num_processes = multiprocessing.cpu_count()  # Utilize all available CPU cores
     pool = multiprocessing.Pool(processes=num_processes)
     toolbox.register("map", pool.map)
 
@@ -102,33 +98,32 @@ def main():
     historical_best = []
 
     for gen in range(NUM_GENERATIONS):
-        # Create offspring through crossover and mutation
         offspring = algorithms.varAnd(population, toolbox, cxpb=CROSSOVER_RATE, mutpb=MUTATION_RATE)
-
-        # Evaluate the offspring with the current generation number and historical best
-        fits = toolbox.map(lambda ind: evaluate(ind, historical_best, gen), offspring)
+        fits = toolbox.map(toolbox.evaluate, offspring)
         for fit, ind in zip(fits, offspring):
             ind.fitness.values = fit
 
-        # Update population
         population = toolbox.select(offspring, k=len(population))
         best_ind = tools.selBest(population, 1)[0]
         log_best_weights(best_ind, gen)
 
-        # Save and log historical best weights
-        if gen % 10 == 0 and gen > 0:
+        if gen % 10 == 0:
             historical_best.append(best_ind[:WEIGHTS_PER_PLAYER])
             log_best_weights(best_ind[:WEIGHTS_PER_PLAYER], f"historical_best_gen_{gen}")
 
-        # Adjust temperature for simulated annealing
         temperature *= 0.99
 
-    # Find and print the best weights found
+        # Replace some individuals with historical best
+        if historical_best:
+            num_to_replace = min(2, len(historical_best))  # Replace a maximum of 2 individuals
+            indices_to_replace = random.sample(range(len(population)), num_to_replace)
+            for i, index in enumerate(indices_to_replace):
+                population[index][:WEIGHTS_PER_PLAYER] = historical_best[i % len(historical_best)]
+
     best_ind = tools.selBest(population, 1)[0]
     print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
     log_best_weights(best_ind, "final")
 
-    # Close the pool of workers
     pool.close()
     pool.join()
 
