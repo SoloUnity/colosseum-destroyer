@@ -34,6 +34,10 @@ def get_args():
     parser.add_argument("--display_save_path", type=str, default="plots/")
     parser.add_argument("--autoplay", action="store_true", default=False)
     parser.add_argument("--autoplay_runs", type=int, default=1000)
+    parser.add_argument("--player_1_weights", nargs='*', type=float, default=None,
+                        help="Custom weights for player 1's agent")
+    parser.add_argument("--player_2_weights", nargs='*', type=float, default=None,
+                        help="Custom weights for player 2's agent")
     args = parser.parse_args()
     return args
 
@@ -75,6 +79,8 @@ class Simulator:
             display_save=self.args.display_save,
             display_save_path=self.args.display_save_path,
             autoplay=self.args.autoplay,
+            player_1_weights=self.args.player_1_weights,  # Pass the weights
+            player_2_weights=self.args.player_2_weights   # Pass the weights
         )
 
     def run(self, swap_players=False, board_size=None):
@@ -106,7 +112,7 @@ class Simulator:
         with all_logging_disabled():
             for i in tqdm(range(self.args.autoplay_runs)):
                 swap_players = i % 2 == 0
-                board_size = np.random.randint(args.board_size_min, args.board_size_max)
+                board_size = np.random.randint(self.args.board_size_min, self.args.board_size_max)
                 print("Board Size: " + str(board_size))
                 p0_score, p1_score, p0_time, p1_time = self.run(
                     swap_players=swap_players, board_size=board_size
@@ -136,6 +142,8 @@ class Simulator:
             f"Player {PLAYER_1_NAME} win percentage: {(p1_win_count / self.args.autoplay_runs) * 100}. Maxium turn time was {np.round(np.max(p1_times),5)} seconds.")
         logger.info(
             f"Player {PLAYER_2_NAME} win percentage: {(p2_win_count / self.args.autoplay_runs) * 100}. Maxium turn time was {np.round(np.max(p2_times),5)} seconds.")
+        
+        return p1_win_count, p2_win_count
 
 # if __name__ == "__main__":
 #     args = get_args()
@@ -148,7 +156,6 @@ class Simulator:
 if __name__ == "__main__":
     # Manually create an argparse.Namespace object with desired default values
     args = argparse.Namespace(
-        player_1="second_agent",
         player_1="student_agent",
         player_2="student_agent",
         board_size=6,  # Assuming default value from get_args()
@@ -158,13 +165,13 @@ if __name__ == "__main__":
         display_delay=0.4,  # Assuming default value from get_args()
         display_save=False,  # Assuming default value from get_args()
         display_save_path="plots/",  # Assuming default value from get_args()
-        autoplay=True,  # Assuming default value from get_args()
+        autoplay=False,  # Assuming default value from get_args()
         autoplay_runs=5  # Assuming default value from get_args()
     )
 
     simulator = Simulator(args)
     if args.autoplay:
-        simulator.autoplay()
+        _ = simulator.autoplay()
     else:
         simulator.run()
 

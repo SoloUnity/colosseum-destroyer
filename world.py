@@ -20,6 +20,8 @@ class World:
         self,
         player_1="random_agent",
         player_2="random_agent",
+        player_1_weights=None,
+        player_2_weights=None,
         board_size=None,
         display_ui=False,
         display_delay=2,
@@ -65,10 +67,22 @@ class World:
 
         p0_agent = AGENT_REGISTRY[player_1]
         p1_agent = AGENT_REGISTRY[player_2]
+
         logger.info(f"Registering p0 agent : {player_1}")
-        self.p0 = p0_agent()
+        if player_1 == "student_agent" and player_1_weights is not None:
+            self.p0 = p0_agent(*player_1_weights)
+        else:
+            self.p0 = p0_agent()
         logger.info(f"Registering p1 agent : {player_2}")
-        self.p1 = p1_agent()
+
+        # Instantiate player 2 with custom weights if provided
+        if player_2 == "student_agent" and player_2_weights is not None:
+            self.p1 = p1_agent(*player_2_weights)
+        else:
+            self.p1 = p1_agent()
+            
+        # self.p0 = p0_agent()
+        # self.p1 = p1_agent()
 
         # check autoplay
         if autoplay:

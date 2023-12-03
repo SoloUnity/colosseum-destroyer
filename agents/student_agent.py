@@ -17,7 +17,7 @@ class StudentAgent(Agent):
     add any helper functionalities needed for your agent.
     """
 
-    def __init__(self):
+    def __init__(self, expansionWeight=1.0, centerDistanceWeight=1.0, controlWeight=1.0, barrierWeight=1.0, immediateBarrierWeight=1.0):
         super(StudentAgent, self).__init__()
         self.name = "StudentAgent"
         self.dir_map = {
@@ -26,6 +26,13 @@ class StudentAgent(Agent):
             "d": 2,
             "l": 3,
         }
+
+        self.expansionWeight = expansionWeight
+        self.centerDistanceWeight = centerDistanceWeight
+        self.controlWeight = controlWeight
+        self.barrierWeight = barrierWeight
+        self.immediateBarrierWeight = immediateBarrierWeight
+
         self.cachedLegalMoves = {}
         self.transpositionTable = {}
         self.gameOverCache = {}
@@ -56,7 +63,7 @@ class StudentAgent(Agent):
 
         start_time = time.time()
         depth = 1
-        bestScore = -9999
+        bestScore = float("-inf")
         bestMove = None
 
         while True:
@@ -67,14 +74,13 @@ class StudentAgent(Agent):
                 bestMove = move  # Update best move at this depth
                 bestScore = score
 
-            if currentTime - start_time > 1.98:
+            if currentTime - start_time > 1.99:
                 break  # Stop if we"re close to the time limit
 
             depth += 1  # Increase depth for next iteration
 
         print("Depth: " + str(depth))
-        if bestMove == None:
-            print("Returned None")
+
         return bestMove
     
     # Using this as reference: http://people.csail.mit.edu/plaat/mtdf.html#abmem
@@ -148,7 +154,7 @@ class StudentAgent(Agent):
 
     def cutoff(self, myPos, advPos, depth, chessBoard, startTime):
         current_time = time.time()
-        return current_time - startTime > 1.98 or depth == 0
+        return current_time - startTime > 1.99 or depth == 0
 
         # return current_time - startTime > 1.98 or depth == 0 or self.isGameOver(myPos, advPos, chessBoard)
     
@@ -196,12 +202,29 @@ class StudentAgent(Agent):
     def eval(self, myPos, advPos, chessBoard, maxStep):
         control = self.zoneArea(myPos, advPos, chessBoard)
 
-        score = (self.potentialExpansion(myPos, advPos, maxStep, chessBoard) * 0.3
-        + self.distanceFromCenter(myPos, advPos, chessBoard) * 0.1
-        + control * 0.4
-        + self.zoneBarriers(myPos, advPos, chessBoard, control) * 0.2)
+        score = (self.potentialExpansion(myPos, advPos, maxStep, chessBoard) * self.expansionWeight) + \
+                (self.distanceFromCenter(myPos, advPos, chessBoard) * self.centerDistanceWeight) + \
+                (control * self.controlWeight) + \
+                (self.zoneBarriers(myPos, advPos, chessBoard, control) * self.barrierWeight) + \
+                (self.immediateBarriers(myPos, chessBoard) * self.immediateBarrierWeight)
 
         return score
+    
+    def immediateBarriers(self, myPos, chessBoard):
+        x = myPos[0]
+        y = myPos[1]
+        barrierCount = 0
+
+        if chessBoard[x, y, 0]:  # up
+            barrierCount += 1
+        if chessBoard[x, y, 1]:  # right
+            barrierCount += 1
+        if y < chessBoard.shape[0] - 1 and chessBoard[x, y + 1, 2]:  # down
+            barrierCount += 1
+        if x < chessBoard.shape[1] - 1 and chessBoard[x + 1, y, 3]:  # left
+            barrierCount += 1
+
+        return -barrierCount
 
     def potentialExpansion(self, myPos, advPos, maxStep, chessBoard):
         myMoves = len(self.getLegalMoves(myPos, advPos, maxStep, chessBoard))
@@ -209,10 +232,22 @@ class StudentAgent(Agent):
         return (myMoves - advMoves)
     
     def distanceFromCenter(self, myPos, advPos, chessBoard):
-        centerPos = (chessBoard.shape[0] - 1) / 2
-        myDist = abs(myPos[0] - centerPos) + abs(myPos[1] - centerPos)
-        advDist = abs(advPos[0] - centerPos) + abs(advPos[1] - centerPos)
+        boardLength = chessBoard.shape[0]
+        centerX = 0
+        centerY = 0
+
+        if boardLength % 2 != 0:  
+            centerX = (boardLength - 1) / 2
+            centerY = (boardLength - 1) / 2
+        else:  
+            centerX = boardLength / 2 - 0.5
+            centerY = boardLength / 2 - 0.5
+
+        myDist = abs(myPos[0] - centerX) + abs(myPos[1] - centerY)
+        advDist = abs(advPos[0] - centerX) + abs(advPos[1] - centerY)
+
         return (advDist - myDist)
+
     
     def zoneArea(self, myPos, advPos, chessBoard):
         if myPos[0] > advPos[0]:
@@ -358,44 +393,3 @@ class StudentAgent(Agent):
         else: 
             return -count
     
-    def isGameOver(self, myPos, advPos, chessBoard):
-        boardKey = chessBoard.tostring()
-        if boardKey in self.gameOverCache:
-            return self.gameOverCache[boardKey]
-
-        boardLength, _, _ = chessBoard.shape
-
-        # Union-Find
-        father = dict()
-        for r in range(boardLength):
-            for c in range(boardLength):
-                father[(r, c)] = (r, c)
-
-        def find(pos):
-            if father[pos] != pos:
-                father[pos] = find(father[pos])
-            return father[pos]
-
-        def union(pos1, pos2):
-            father[find(pos1)] = find(pos2)
-
-        # Only check down and right
-        directions = [(0, 1), (1, 0)]  # Right, Down
-        for r in range(boardLength):
-            for c in range(boardLength):
-                for move in directions:
-                    if chessBoard[r, c, 1 if move == (0, 1) else 2]:
-                        continue
-                    pos_a = find((r, c))
-                    pos_b = find((r + move[0], c + move[1]))
-                    if pos_a != pos_b:
-                        union(pos_a, pos_b)
-
-        # Find roots for each player
-        p0_r = find(tuple(myPos))
-        p1_r = find(tuple(advPos))
-
-        # Check if players belong to the same set
-        gameOverResult = p0_r != p1_r
-        self.gameOverCache[boardKey] = gameOverResult
-        return gameOverResult
