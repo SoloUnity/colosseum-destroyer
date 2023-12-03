@@ -72,7 +72,9 @@ class StudentAgent(Agent):
 
             depth += 1  # Increase depth for next iteration
 
-        print("depth: " + str(depth))
+        print("Depth: " + str(depth))
+        if bestMove == None:
+            print("Returned None")
         return bestMove
     
     # Using this as reference: http://people.csail.mit.edu/plaat/mtdf.html#abmem

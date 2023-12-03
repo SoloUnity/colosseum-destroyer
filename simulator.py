@@ -84,7 +84,7 @@ class Simulator:
         while not is_end:
             is_end, p0_score, p1_score = self.world.step()
             runNum += 1
-            sys.stdout.write("\r" + "Current Step:" + str(runNum))
+            sys.stdout.write("\r" + "Current Step:" + str(runNum) + " ")
             sys.stdout.flush()
 
         logger.info(
@@ -149,6 +149,7 @@ if __name__ == "__main__":
     # Manually create an argparse.Namespace object with desired default values
     args = argparse.Namespace(
         player_1="second_agent",
+        player_1="student_agent",
         player_2="student_agent",
         board_size=6,  # Assuming default value from get_args()
         board_size_min=6,  # Assuming default value from get_args()
