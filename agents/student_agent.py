@@ -304,7 +304,7 @@ class StudentAgent(Agent):
                 for direction in range(0, 4):
                     if chessBoard[x, y, direction]:
                         totalWalls += 1
-        return (totalWalls - totalWalls) / totalSquares
+        return (totalSquares - totalWalls) / totalSquares
     
     def extendBarrierHeuristic(self, move, chessBoard):
         score = 0
