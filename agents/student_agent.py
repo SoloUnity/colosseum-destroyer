@@ -27,6 +27,7 @@ class StudentAgent(Agent):
             "l": 3,
         }
 
+        self.maxStep = 0
         self.cutoffTime = 1.98
         self.gameOverThreshold = 20
 
@@ -66,7 +67,7 @@ class StudentAgent(Agent):
         # Add iterative deepening
         # Move ordering
         # Transpos
-
+        self.maxStep = max_step
         start_time = time.time()
         depth = 1
         bestScore = float("-inf")
@@ -243,7 +244,7 @@ class StudentAgent(Agent):
         y = myPos[1]
         barrierCount = 0
 
-        if move == ((x, y), 0) or chessBoard[x, y, 0] :  # up
+        if move == ((x, y), 0) or chessBoard[x, y, 0]:  # up
             barrierCount += 1
         if move == ((x, y), 1) or chessBoard[x, y, 1]:  # right
             barrierCount += 1
@@ -252,10 +253,15 @@ class StudentAgent(Agent):
         if move == ((x, y), 3) or (x < chessBoard.shape[1] - 1 and chessBoard[x + 1, y, 3]):  # left
             barrierCount += 1
 
-        if barrierCount == 4:
+        manhattan_distance = abs(myPos[0] - advPos[0]) + abs(myPos[1] - advPos[1])
+
+        if barrierCount == 3 and manhattan_distance <= self.maxStep - 1:
             return -9999
-        else:
-            return 0
+        elif barrierCount == 4:
+            return -9999  
+
+        return 0
+
         
     def expansionHeuristic(self, myPos, advPos, maxStep, chessBoard):
         myMoves = len(self.getLegalMoves(myPos, advPos, maxStep, chessBoard))
