@@ -231,7 +231,7 @@ class StudentAgent(Agent):
         totalWalls = np.sum(chessBoard)
         
         score += self.expansionHeuristic(myPos, advPos, maxStep, chessBoard) * self.expansionWeight
-        score += self.aggresiveHeuristic(myPos, advPos, boardSize, totalWalls) * self.agressiveWeight
+        score += self.aggressiveHeuristic(myPos, advPos, boardSize, totalWalls) * self.agressiveWeight
         score += self.centerDistanceHeuristic(chessBoard, myPos) * self.centerDistanceWeight
         score += self.openSpaceHeuristic(chessBoard, myPos) * self.openSpaceWeight
         if move != None:
@@ -268,7 +268,7 @@ class StudentAgent(Agent):
         advMoves = len(self.getLegalMoves(advPos, myPos, maxStep, chessBoard))
         return (myMoves - advMoves)
     
-    def aggresiveHeuristic(self, myPos, advPos, boardSize, totalWalls):
+    def aggressiveHeuristic(self, myPos, advPos, boardSize, totalWalls):
         distanceToAdv = abs(myPos[0] - advPos[0]) + abs(myPos[1] - advPos[1])
         score = 0
         maxWalls = boardSize * (boardSize - 1) * 2  # Maximum possible walls
