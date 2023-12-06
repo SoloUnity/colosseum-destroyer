@@ -6,6 +6,8 @@ import os
 import multiprocessing
 import numpy as np
 
+
+
 # Genetic Algorithm parameters
 POPULATION_SIZE = 24
 NUM_GENERATIONS = 1000
@@ -19,7 +21,7 @@ RANGE_LIMIT = 2.5
 RANGE_EXPANSION_FACTOR = 1.5
 
 # Starting weights
-STARTING_WEIGHTS = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+myAgentWeights = [1,1,1,1,1]
 #expansionWeight=1.0, centerDistanceWeight=1.0, controlWeight=1.0, barrierWeight=1.0, immediateBarrierWeight=1.0)
 # Initialize argparse.Namespace object with default values
 args = argparse.Namespace(
@@ -38,8 +40,8 @@ args = argparse.Namespace(
 
 def adjust_weight_range():
     global RANGE_LIMIT
-    max_weight = max(STARTING_WEIGHTS)
-    min_weight = min(STARTING_WEIGHTS)
+    max_weight = max(myAgentWeights)
+    min_weight = min(myAgentWeights)
 
     while max_weight > RANGE_LIMIT:
         RANGE_LIMIT *= RANGE_EXPANSION_FACTOR
@@ -220,4 +222,5 @@ def main():
     pool.join()
 
 if __name__ == '__main__':
+    time_taken = 0
     main()

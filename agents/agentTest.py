@@ -13,26 +13,28 @@ class MockAgent:
         return 0 <= r < boardLength and 0 <= c < boardLength
 
     def isGameOver(self, myPos, advPos, chessBoard):
-
-        boardKey = chessBoard.tostring()
-        if boardKey in self.gameOverCache:
-            return self.gameOverCache[boardKey]
-
         boardLength, _, _ = chessBoard.shape
 
-        # Union-Find
-        father = dict()
+        # Added path compression and size tracking
+        parent = dict()
+        size = dict()
         for r in range(boardLength):
             for c in range(boardLength):
-                father[(r, c)] = (r, c)
+                parent[(r, c)] = (r, c)
+                size[(r, c)] = 1
 
         def find(pos):
-            if father[pos] != pos:
-                father[pos] = find(father[pos])
-            return father[pos]
+            if parent[pos] != pos:
+                parent[pos] = find(parent[pos])
+            return parent[pos]
 
         def union(pos1, pos2):
-            father[find(pos1)] = find(pos2)
+            root1, root2 = find(pos1), find(pos2)
+            if root1 != root2:
+                if size[root1] < size[root2]:
+                    root1, root2 = root2, root1 
+                parent[root2] = root1
+                size[root1] += size[root2]
 
         # Only check down and right
         directions = [(0, 1), (1, 0)]  # Right, Down
@@ -50,9 +52,12 @@ class MockAgent:
         p0_r = find(tuple(myPos))
         p1_r = find(tuple(advPos))
 
+        # Scores are now directly available from size dictionary
+        p0_score = size[p0_r]
+        p1_score = size[p1_r]
+
         # Check if players belong to the same set
         gameOverResult = p0_r != p1_r
-        self.gameOverCache[boardKey] = gameOverResult
         return gameOverResult
     
     def getLegalMoves1(self, myPos, advPos, maxStep, chessBoard, moves):
@@ -236,93 +241,93 @@ def print_chessboard(chessboard, player_pos, opponent_pos):
 
 # Create a mock chess board with barriers and test the function
 boardSize = 6
-# data = [
-#   [[True, False, False, True],
-#    [True, False, False, False],
-#    [True, False, True, False],
-#    [True, False, False, False],
-#    [True, False, False, False],
-#    [True, True, False, False]],
-
-#   [[False, False, False, True],
-#    [False, False, False, False],
-#    [True, False, True, False],
-#    [False, False, True, False],
-#    [False, False, True, False],
-#    [False, True, False, False]],
-
-#   [[False, False, False, True],
-#    [False, True, False, False],
-#    [True, False, True, True],
-#    [True, False, True, False],
-#    [True, False, False, False],
-#    [False, True, False, False]],
-
-#   [[False, False, False, True],
-#    [False, True, True, False],
-#    [True, True, True, True],
-#    [True, True, True, True],
-#    [False, False, False, True],
-#    [False, True, False, False]],
-
-#   [[False, False, False, True],
-#    [True, False, False, False],
-#    [True, False, False, False],
-#    [True, False, True, False],
-#    [False, False, False, False],
-#    [False, True, False, False]],
-
-#   [[False, False, True, True],
-#    [False, False, True, False],
-#    [False, False, True, False],
-#    [True, False, True, False],
-#    [False, False, True, False],
-#    [False, True, True, False]]
-# ]
-
 data = [
-    [[ True, False, False,  True],
-     [ True, False, False, False],
-     [ True, False, False, False],
-     [ True, False, False, False],
-     [ True, False,  True, False],
-     [ True,  True, False, False]],
+  [[True, False, False, True],
+   [True, False, False, False],
+   [True, False, True, False],
+   [True, False, False, False],
+   [True, False, False, False],
+   [True, True, False, False]],
 
-    [[False, False, False,  True],
-     [False, False, False, False],
-     [False, False,  True, False],
-     [False, False,  True, False],
-     [ True, False,  True, False],
-     [False,  True, False, False]],
+  [[False, False, False, True],
+   [False, False, False, False],
+   [True, False, True, False],
+   [False, False, True, False],
+   [False, False, True, False],
+   [False, True, False, False]],
 
-    [[False, False, False,  True],
-     [False, False, False, False],
-     [ True, False,  True, False],
-     [ True,  True,  True, False],
-     [ True, False, False,  True],
-     [False,  True, False, False]],
+  [[False, False, False, True],
+   [False, True, False, False],
+   [True, False, True, True],
+   [True, False, True, False],
+   [True, False, False, False],
+   [False, True, False, False]],
 
-    [[False, False, False,  True],
-     [False, False, False, False],
-     [ True, False, False, False],
-     [ True, False, False, False],
-     [False,  True, False, False],
-     [False,  True, False,  True]],
+  [[False, False, False, True],
+   [False, True, True, False],
+   [True, True, True, True],
+   [True, True, True, True],
+   [False, False, False, True],
+   [False, True, False, False]],
 
-    [[False, False, False,  True],
-     [False, False,  True, False],
-     [False, False, False, False],
-     [False, False, False, False],
-     [False, False, False, False],
-     [False,  True, False, False]],
+  [[False, False, False, True],
+   [True, False, False, False],
+   [True, False, False, False],
+   [True, False, True, False],
+   [False, False, False, False],
+   [False, True, False, False]],
 
-    [[False, False,  True,  True],
-     [ True, False,  True, False],
-     [False, False,  True, False],
-     [False, False,  True, False],
-     [False, False,  True, False],
-     [False,  True,  True, False]]
+  [[False, False, True, True],
+   [False, False, True, False],
+   [False, False, True, False],
+   [True, False, True, False],
+   [False, False, True, False],
+   [False, True, True, False]]
 ]
+
+# data = [
+#     [[ True, False, False,  True],
+#      [ True, False, False, False],
+#      [ True, False, False, False],
+#      [ True, False, False, False],
+#      [ True, False,  True, False],
+#      [ True,  True, False, False]],
+
+#     [[False, False, False,  True],
+#      [False, False, False, False],
+#      [False, False,  True, False],
+#      [False, False,  True, False],
+#      [ True, False,  True, False],
+#      [False,  True, False, False]],
+
+#     [[False, False, False,  True],
+#      [False, False, False, False],
+#      [ True, False,  True, False],
+#      [ True,  True,  True, False],
+#      [ True, False, False,  True],
+#      [False,  True, False, False]],
+
+#     [[False, False, False,  True],
+#      [False, False, False, False],
+#      [ True, False, False, False],
+#      [ True, False, False, False],
+#      [False,  True, False, False],
+#      [False,  True, False,  True]],
+
+#     [[False, False, False,  True],
+#      [False, False,  True, False],
+#      [False, False, False, False],
+#      [False, False, False, False],
+#      [False, False, False, False],
+#      [False,  True, False, False]],
+
+#     [[False, False,  True,  True],
+#      [ True, False,  True, False],
+#      [False, False,  True, False],
+#      [False, False,  True, False],
+#      [False, False,  True, False],
+#      [False,  True,  True, False]]
+# ]
 
 # Initialize the chessboard with False (equivalent to 0) values
 chessBoard = np.array(data, dtype=bool)

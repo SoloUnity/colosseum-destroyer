@@ -160,7 +160,7 @@ if __name__ == "__main__":
         player_2="student_agent",
         player_1_weights=None,
         player_2_weights=None,
-        board_size=6,  # Assuming default value from get_args()
+        board_size=12,  # Assuming default value from get_args()
         board_size_min=6,  # Assuming default value from get_args()
         board_size_max=12,  # Assuming default value from get_args()
         display=True,  # Assuming default value from get_args()

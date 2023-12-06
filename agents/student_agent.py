@@ -366,7 +366,7 @@ class StudentAgent(Agent):
         # Calculate the percentage of walls placed
         wallPercentage = (totalWalls / maxWalls) * 100
         if wallPercentage < 50:
-            score -= distanceToAdv * self.aggressionWeight  # Be aggressive
+            score -= distanceToAdv
 
         return score
     
