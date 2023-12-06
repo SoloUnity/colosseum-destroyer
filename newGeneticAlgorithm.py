@@ -7,7 +7,7 @@ import multiprocessing
 import numpy as np
 import time
 
-populationSize = 18
+populationSize = 10
 numGenerations = 100
 mutationRate = 0.35
 crossOverRate = 0.8
@@ -44,25 +44,20 @@ creator.create("Individual", list, fitness=creator.FitnessMax)
 
 def evaluate(individual):
     player_1_weights = individual[:weightsPerPlayer]
+    total_score = 0
 
-    # Select a random enemy agent
-    enemy_agent = random.choice(enemyAgentnames)
+    for enemy_agent in enemyAgentnames:
+        local_args = argparse.Namespace(**vars(args))
+        local_args.player_1_weights = player_1_weights
+        local_args.player_2 = enemy_agent
+        p1_win_count, p2_win_count = Simulator(local_args).autoplay()
+        total_score += p1_win_count - p2_win_count
 
-    # Set up the arguments for the simulation
-    local_args = argparse.Namespace(**vars(args))
-    local_args.player_1_weights = player_1_weights
-    local_args.player_2 = enemy_agent
-
-    # Run the simulation and get the results
-    p1_win_count, p2_win_count = Simulator(local_args).autoplay()
-
-    # Calculate the score (could be a simple difference of wins, or any other metric you prefer)
-    total_score = p1_win_count - p2_win_count
-
+    # Here, we simply sum up the scores, but you can use other methods of aggregation
     return total_score,
 
 toolbox = base.Toolbox()
-toolbox.register("attr_float", random.uniform, 0, 5)
+toolbox.register("attr_float", random.uniform, 0, 10)
 toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, n=weightsPerPlayer)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("evaluate", evaluate)
@@ -74,7 +69,7 @@ def main():
     if not os.path.exists(logDir):
         os.makedirs(logDir)
 
-    num_processes = 9
+    num_processes = 30
     pool = multiprocessing.Pool(processes=num_processes)
     toolbox.register("map", pool.map)
 
@@ -112,7 +107,5 @@ def main():
     pool.join()
 
 if __name__ == '__main__':
-    start_time = time.time()
-    main()
-    time_taken = time.time() - start_time
+    time_taken = 0
     print("Time taken:", time_taken)

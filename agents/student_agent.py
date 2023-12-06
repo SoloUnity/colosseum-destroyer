@@ -341,12 +341,12 @@ class StudentAgent(Agent):
                 newPos = (myPos[0], myPos[1] - 1)
 
         if myBarrierCount == 4:
-            return -500  # Less harsh than didWin so that this can be overriden
+            return -5000  # Less harsh than didWin so that this can be overriden
 
         if myBarrierCount == 3 and newPos != None:
             manhattan_distance = abs(newPos[0] - advPos[0]) + abs(newPos[1] - advPos[1])
             if manhattan_distance <= self.maxStep:
-                return -500 
+                return -5000 
 
         return 0
 
@@ -409,12 +409,3 @@ class StudentAgent(Agent):
                 score += 1
 
         return score
-
-
-    
-
-
-
-
-        
-    
