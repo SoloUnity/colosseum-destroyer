@@ -19,6 +19,22 @@ This repository features a sophisticated genetic algorithm designed to optimize 
 ## Testing
 This repository includes a simulator for running and testing a strategic two-player board game where AI agents, including the `StudentAgent`, compete against each other. The simulator can be run from an Integrated Development Environment (IDE) or directly from the terminal, offering flexibility for different development and testing scenarios.
 
+**Installation:**
+
+Before running the simulator, you need to install the necessary Python libraries. You can install these dependencies using the following command:
+
+```bash
+pip install matplotlib==3.5.1 numpy pytest==7.0.1 tqdm==4.62.3 click==8.0.4 deap
+```
+
+These libraries include 
+- `matplotlib` for plotting and visualizing game states
+- `numpy` for numerical operations
+- `pytest` for running tests
+- `tqdm` for progress bars in the terminal
+- `click` for creating command-line interfaces
+- `deap` for evolutionary algorithms
+
 **Running the Simulator:**
 
 - **From an IDE**: Simply import the required modules, instantiate the `Simulator` class with desired arguments, and call the `run()` or `autoplay()` method based on your testing needs.
