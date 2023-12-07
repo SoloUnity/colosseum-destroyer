@@ -8,7 +8,7 @@ from functools import partial
 
 
 # Enemy agent names
-enemyAgentnames = ["alex_agent", "emile_agent", "heuristic_agent"]
+enemyAgentnames = ["student_agent", "second_agent"]
 
 # Setup argparse to accept individual weights as input
 weights = [2.2257773455007674, 1.6827700383488384, 0.7749411599289664, 4.146058213061401, 4.835535074438474]

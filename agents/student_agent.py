@@ -18,7 +18,7 @@ class StudentAgent(Agent):
     A dummy class for your implementation. Feel free to use this class to
     add any helper functionalities needed for your agent.
     """
-    # Extra parameters were used to train the agent
+    # Extra parameters were used to to allow for genetic algorithm training
     def __init__(self, expansionWeight=7.614144709985369, agressiveWeight=1.7574868125047338, centerDistanceWeight=8.200845538225007, openSpaceWeight=5.33281289566942, extendBarrierWeight=8.602283333747607):
         super(StudentAgent, self).__init__()
         self.name = "StudentAgent"
@@ -37,7 +37,6 @@ class StudentAgent(Agent):
         self.moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
         self.opposites = {0: 2, 1: 3, 2: 0, 3: 1}
         self.transpositionTable = {}
-        self.gameOverCache = {}
 
         self.expansionWeight = expansionWeight
         self.agressiveWeight = agressiveWeight
@@ -83,29 +82,31 @@ class StudentAgent(Agent):
             currentTime = time.time()
             
             if score > bestScore:
-                bestMove = move  # Update best move at this depth
+                bestMove = move 
                 bestScore = score
 
             if currentTime - self.startTime > self.cutoffTime:
-                break  # break when time alloted is reached
-
+                break  
             depth += 1
 
         return bestMove
     
     def doMove(self, pos, direction, chessBoard):
+
         posX, posY = pos
         adjacentX, adjacentY = (posX + self.moves[direction][0], posY + self.moves[direction][1])
         chessBoard[posX, posY, direction] = True
         chessBoard[adjacentX, adjacentY, self.opposites[direction]] = True
 
     def undoMove(self, pos, direction, chessBoard):
+
         posX, posY = pos
         adjacentX, adjacentY = (posX + self.moves[direction][0], posY + self.moves[direction][1])
         chessBoard[posX, posY, direction] = False
         chessBoard[adjacentX, adjacentY, self.opposites[direction]] = False
 
     def alphaBeta(self, myPos, advPos, depth, chessBoard):
+
         alpha = float("-inf")
         beta = float("inf")
         return self.MaxValue(myPos, advPos, depth, chessBoard, alpha, beta)
@@ -119,6 +120,7 @@ class StudentAgent(Agent):
         # Transposition implementation for more efficient iterative deepening, based on: http://people.csail.mit.edu/plaat/mtdf.html#abmem
         transpositionKey = self.getTranspositionKey(myPos, advPos, chessBoard, True)
         if transpositionKey in self.transpositionTable:
+
             entry = self.transpositionTable[transpositionKey]
             if entry["depth"] >= depth:
                 if entry["flag"] == "exact":
@@ -161,6 +163,7 @@ class StudentAgent(Agent):
         # Transposition implementation for more efficient iterative deepening, based on: http://people.csail.mit.edu/plaat/mtdf.html#abmem
         transpositionKey = self.getTranspositionKey(myPos, advPos, chessBoard, False)
         if transpositionKey in self.transpositionTable:
+
             entry = self.transpositionTable[transpositionKey]
             if entry["depth"] >= depth:
                 if entry["flag"] == "exact":
@@ -178,6 +181,7 @@ class StudentAgent(Agent):
         legalMoves = self.getLegalMoves(advPos, myPos, chessBoard)
 
         for move in legalMoves:
+
             self.doMove(move[0], move[1], chessBoard)
             score, _ = self.MaxValue(myPos, move[0], depth - 1, chessBoard, alpha, beta, move)
             self.undoMove(move[0], move[1], chessBoard)
@@ -205,10 +209,6 @@ class StudentAgent(Agent):
 
     # Optimized checkEndGame function based on world.py, and reformatted for better readability
     def isGameOver(self, myPos, advPos, chessBoard):
-        
-        boardKey = (chessBoard.tostring(), myPos, advPos)
-        if boardKey in self.gameOverCache:
-            return self.gameOverCache[boardKey]
         
         # Added path compression and size tracking
         parent = dict()
@@ -253,7 +253,6 @@ class StudentAgent(Agent):
 
         # Check if players belong to the same set
         gameOverResult = p0_r != p1_r
-        self.gameOverCache[boardKey] = gameOverResult, p0_score, p1_score
         return gameOverResult, p0_score, p1_score
     
     # Check if move is within boundary
@@ -287,14 +286,13 @@ class StudentAgent(Agent):
     def eval(self,myPos, advPos, chessBoard, move, endScore):
         score = 0
         totalWalls = np.sum(chessBoard)
-        winLose = self.didWin(myPos, advPos, chessBoard, endScore)
+        winLose = self.didWin(endScore)
 
         if winLose == None:
             score += self.expansionHeuristic(myPos, advPos, chessBoard) * self.expansionWeight
             score += self.centerDistanceHeuristic(chessBoard, myPos) * self.centerDistanceWeight
             score += self.openSpaceHeuristic(chessBoard, myPos) * self.openSpaceWeight
             score += self.aggresiveHeuristic(myPos, advPos, totalWalls) * self.agressiveWeight
-            score += self.boxedHeuristic(myPos, advPos, chessBoard)
             if move != None:
                 score += self.extendBarrierHeuristic (chessBoard, move) * self.extendBarrierWeight
         elif winLose:
@@ -305,46 +303,14 @@ class StudentAgent(Agent):
         return score
 
     # Determines if the move is winning or losing
-    def didWin(self, myPos, advPos, chessBoard, endScore):
+    def didWin(self, endScore):
         if endScore > 0:
             return True
         elif endScore < 0:
             return False
         else:
             return None
-        
-    def boxedHeuristic(self, myPos, advPos, chessBoard):
-        myBarrierCount = 0
-        unplacedBarrierDirection = None
-
-        for direction in range(4):
-            if chessBoard[myPos[0], myPos[1], direction]:
-                myBarrierCount += 1
-            else:
-                unplacedBarrierDirection = direction
-
-        newPos = None
-        if unplacedBarrierDirection is not None:
-            if unplacedBarrierDirection == 0 and self.checkBoundary((myPos[0] - 1, myPos[1])):
-                newPos = (myPos[0] - 1, myPos[1])
-            elif unplacedBarrierDirection == 1 and self.checkBoundary((myPos[0], myPos[1] + 1)):
-                newPos = (myPos[0], myPos[1] + 1)
-            elif unplacedBarrierDirection == 2 and self.checkBoundary((myPos[0] + 1, myPos[1])):
-                newPos = (myPos[0] + 1, myPos[1])
-            elif unplacedBarrierDirection == 3 and self.checkBoundary((myPos[0], myPos[1] - 1)):
-                newPos = (myPos[0], myPos[1] - 1)
-
-        if myBarrierCount == 4:
-            return -5000  # Less harsh than didWin so that this can be overriden
-
-        if myBarrierCount == 3 and newPos != None:
-            manhattan_distance = abs(newPos[0] - advPos[0]) + abs(newPos[1] - advPos[1])
-            if manhattan_distance <= self.maxStep:
-                return -5000 
-
-        return 0
-
-
+    
     # Based on number of moves available
     def expansionHeuristic(self, myPos, advPos, chessBoard):
         myMoves = len(self.getLegalMoves(myPos, advPos, chessBoard))
