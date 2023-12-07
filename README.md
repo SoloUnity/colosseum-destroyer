@@ -32,7 +32,7 @@ This repository includes a simulator for running and testing a strategic two-pla
 Before running the simulator, you need to install the necessary Python libraries. You can install these dependencies using the following command:
 
 ```bash
-pip install matplotlib==3.5.1 numpy pytest==7.0.1 tqdm==4.62.3 click==8.0.4 deap
+pip3 install matplotlib==3.5.1 numpy pytest==7.0.1 tqdm==4.62.3 click==8.0.4 deap
 ```
 
 These libraries include 
@@ -48,7 +48,7 @@ These libraries include
 - **From an IDE**: Simply import the required modules, instantiate the `Simulator` class with desired arguments, and call the `run()` or `autoplay()` method based on your testing needs.
 - **From the Terminal**: Use command-line arguments to customize the simulation. Here's an example command to run the simulator: 
   ```bash
-  python simulator.py --player_1 student_agent --player_2 random_agent --board_size 10 --autoplay
+  python3 simulator.py --player_1 student_agent --player_2 random_agent --board_size 10 --autoplay
   ```
 
 **Command-Line Arguments:**
