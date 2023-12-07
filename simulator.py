@@ -130,7 +130,7 @@ if __name__ == "__main__":
     args = argparse.Namespace(
         player_1="random_agent",
         player_2="student_agent",
-        board_size=None,  # Assuming default value from get_args()
+        board_size=12,  # Assuming default value from get_args()
         board_size_min=6,  # Assuming default value from get_args()
         board_size_max=12,  # Assuming default value from get_args()
         display=True,  # Assuming default value from get_args()
@@ -138,7 +138,7 @@ if __name__ == "__main__":
         display_save=False,  # Assuming default value from get_args()
         display_save_path="plots/",  # Assuming default value from get_args()
         autoplay=False,  # Assuming default value from get_args()
-        autoplay_runs=5  # Assuming default value from get_args()
+        autoplay_runs=10  # Assuming default value from get_args()
     )
 
     simulator = Simulator(args)

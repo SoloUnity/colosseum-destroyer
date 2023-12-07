@@ -4,13 +4,9 @@ from store import register_agent
 import sys
 import numpy as np
 from copy import deepcopy
-
 import time
-from collections import deque
-import math
-import logging
 
-logger = logging.getLogger(__name__)
+from collections import deque
 
 @register_agent("student_agent")
 class StudentAgent(Agent):
@@ -32,7 +28,7 @@ class StudentAgent(Agent):
         self.maxStep = 0
         self.startTime = None
         self.boardSize = 0
-        self.cutoffTime = 1.98
+        self.cutoffTime = 1.99
 
         self.moves = ((-1, 0), (0, 1), (1, 0), (0, -1))
         self.opposites = {0: 2, 1: 3, 2: 0, 3: 1}
@@ -88,7 +84,7 @@ class StudentAgent(Agent):
             if currentTime - self.startTime > self.cutoffTime:
                 break  
             depth += 1
-
+            
         return bestMove
     
     def doMove(self, pos, direction, chessBoard):
@@ -135,18 +131,21 @@ class StudentAgent(Agent):
         maxScore = float("-inf")
         bestMove = None
         legalMoves = self.getLegalMoves(myPos, advPos, chessBoard)
-
+        
         for move in legalMoves:
             self.doMove(move[0], move[1], chessBoard)
             score, _ = self.MinValue(move[0], advPos, depth - 1, chessBoard, alpha, beta, move)
             self.undoMove(move[0], move[1], chessBoard)
-
+            
             if score > maxScore:
                 maxScore = score
                 bestMove = move
             alpha = max(alpha, score)
             if alpha >= beta:
                 break
+
+            if time.time() - self.startTime > self.cutoffTime:
+                return maxScore, bestMove
 
         # Save to transposition table
         flag = "exact" if maxScore <= alpha else "lowerbound"
@@ -185,11 +184,15 @@ class StudentAgent(Agent):
             self.doMove(move[0], move[1], chessBoard)
             score, _ = self.MaxValue(myPos, move[0], depth - 1, chessBoard, alpha, beta, move)
             self.undoMove(move[0], move[1], chessBoard)
+
             if score < minScore:
                 minScore = score
                 bestMove = move
             beta = min(beta, score)
             if alpha >= beta:
+                return minScore, bestMove
+            
+            if time.time() - self.startTime > self.cutoffTime:
                 return minScore, bestMove
             
         # Save to transposition table
@@ -280,6 +283,9 @@ class StudentAgent(Agent):
                         if stepsLeft > 0:
                             queue.append((nextPosition, stepsLeft - 1))
                     legalMoves.add((currentPos, directionIndex))
+                    
+            if time.time() - self.startTime > self.cutoffTime:
+                break
         return list(legalMoves)
     
     # Heuristic evaluation function

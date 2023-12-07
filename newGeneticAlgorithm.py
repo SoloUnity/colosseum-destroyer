@@ -16,7 +16,7 @@ logDir = "logs"
 winPercentage = {}
 
 # Assuming that your enemy agents' names are valid and will be used for some logic
-enemyAgentnames = ["mcts_agent","alex_agent", "emile_agent", "heuristic_agent", "mcts_agent", "random_agent"]
+enemyAgentnames = ["mcts_agent","alex_agent", "emile_agent", "heuristic_agent", "random_agent"]
 
 # The pool creation logic is not fully clear. Assuming you'll select one agent.
 chosenAgent = random.choice(enemyAgentnames)
