@@ -14,7 +14,15 @@ This repository contains the implementation of `StudentAgent`, an advanced AI ag
 to efficiently explore possible moves, optimizing its decisions within a limited time frame. A transposition table is utilized to cache and recall previously evaluated game states, significantly speeding up the decision process. The agent's behavior is further refined by several custom heuristic functions, each assessing the game state from different strategic perspectives such as expansion potential, aggression, positional advantage, and the ability to extend barriers effectively. These heuristics are weighted and combined to form a comprehensive evaluation of each move. `StudentAgent` is an example of applying complex algorithms and heuristics to create a competitive and adaptable AI for grid-based board games.
 
 ### Genetic Algorithm
-This repository features a sophisticated genetic algorithm designed to optimize the heuristic weights of StudentAgent, an AI agent for a strategic two-player board game. The algorithm employs a robust evolutionary approach, fine-tuning the agent's decision-making abilities against a diverse set of enemy strategies. It is configured with parameters like population size, mutation and crossover rates, and the number of heuristic weights, facilitating extensive experimentation and customization. The fitness of each candidate solution is evaluated based on performance against various predefined enemy agents, ensuring that the agent learns to adapt to different play styles. Key features include two-point crossover, Gaussian mutation for generating new solutions, tournament selection for evolution, and periodic reintroduction of historically successful individuals to maintain genetic diversity. Detailed logging of the best-performing weights and win percentages against different opponents after each generation provides valuable insights into the agent's learning progress. The culmination of this training process is an AI agent well-versed in diverse strategies and capable of competing effectively in the specified board game.
+This repository hosts a genetic algorithm for optimizing the heuristic weights of `StudentAgent`, an AI agent for a strategic two-player board game. Key features include:
+
+- **Robust Evolutionary Approach**: Fine-tunes decision-making against various enemy strategies.
+- **Customizable Parameters**: Includes population size, mutation and crossover rates, and number of weights.
+- **Fitness Evaluation**: Based on performance against diverse enemy agents.
+- **Evolutionary Operations**: Utilizes two-point crossover, Gaussian mutation, and tournament selection.
+- **Diversity Maintenance**: Periodically reintroduces successful individuals to the population.
+- **Detailed Logging**: Tracks best weights and win percentages against opponents for each generation.
+- **Outcome**: Produces a strategically versatile AI agent capable of effective competition.
 
 ## Testing
 This repository includes a simulator for running and testing a strategic two-player board game where AI agents, including the `StudentAgent`, compete against each other. The simulator can be run from an Integrated Development Environment (IDE) or directly from the terminal, offering flexibility for different development and testing scenarios.
