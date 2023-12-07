@@ -1,0 +1,75 @@
+import argparse
+from simulator import Simulator
+import multiprocessing
+import os
+import numpy as np
+import ast
+from functools import partial
+
+
+# Enemy agent names
+enemyAgentnames = ["alex_agent", "emile_agent", "heuristic_agent"]
+
+# Setup argparse to accept individual weights as input
+weights = [2.2257773455007674, 1.6827700383488384, 0.7749411599289664, 4.146058213061401, 4.835535074438474]
+
+# Function to read weights from a file
+def read_weights_from_file(file_path):
+    with open(file_path, 'r') as file:
+        weights_str = file.read().strip()
+        weights = ast.literal_eval(weights_str)
+    return [1,1,1,1,1]
+
+# Settings for simulation
+def setup_simulation(weights):
+    return argparse.Namespace(
+        player_1="student_agent",
+        player_2=None,
+        player_1_weights=weights,
+        player_2_weights=None,
+        board_size=None,
+        board_size_min=6,
+        board_size_max=12,
+        display=True,
+        display_delay=0.4,
+        display_save=False,
+        display_save_path="plots/",
+        autoplay=True,
+        autoplay_runs=15
+    )
+
+def play_and_record(sim_args, enemy_agent):
+    sim_args.player_2 = enemy_agent
+    p1_win_count, p2_win_count = Simulator(sim_args).autoplay()
+    win_percentage = p1_win_count / sim_args.autoplay_runs
+    return enemy_agent, win_percentage
+
+# Updated function to log results and weights to a file
+def log_record(results, weights, log_file_path):
+    total_wins = sum(win_perc for _, win_perc in results)
+    total_win_percentage = total_wins / len(results)
+    
+    with open(log_file_path, 'w') as log_file:
+        log_file.write(f"Weights used: {weights}\n\n")
+        log_file.write("Win percentage of student_agent against each enemy agent:\n")
+        for agent, win_perc in results:
+            log_file.write(f"{agent}: {win_perc*100:.2f}% win rate\n")
+        log_file.write(f"\nTotal win percentage against all agents: {total_win_percentage*100:.2f}%\n")
+
+
+if __name__ == '__main__':
+    weight_files = [f for f in os.listdir('testWeights1') if f.endswith('.txt')]
+    for weight_file in weight_files:
+        weights = read_weights_from_file(os.path.join('testWeights1', weight_file))
+        sim_args = setup_simulation(weights)
+        
+        # Use a partial function to include sim_args
+        func = partial(play_and_record, sim_args)
+        with multiprocessing.Pool() as pool:
+            results = pool.map(func, enemyAgentnames)
+        
+        # Create a log file for this set of weights
+        log_file_name = f"results_{weight_file.replace('.txt', '')}.txt"
+        log_file_path = os.path.join('finalLogs', log_file_name)
+        
+        log_record(results, weights, log_file_path)

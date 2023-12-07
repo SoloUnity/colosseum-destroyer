@@ -1,0 +1,9 @@
+Weights used: [6.772329745874515, 1.7574868125047338, 2.490689046358387, 7.8228818531442625, 9.850833323388995]
+
+Win percentage of student_agent against each enemy agent:
+mcts_agent: 100.00% win rate
+alex_agent: 100.00% win rate
+emile_agent: 0.00% win rate
+heuristic_agent: 12.50% win rate
+
+Total win percentage against all agents: 53.12%

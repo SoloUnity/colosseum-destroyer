@@ -18,8 +18,8 @@ class StudentAgent(Agent):
     A dummy class for your implementation. Feel free to use this class to
     add any helper functionalities needed for your agent.
     """
-
-    def __init__(self, expansionWeight=1, agressiveWeight=1, centerDistanceWeight=1, openSpaceWeight=1, extendBarrierWeight=1):
+    # Extra parameters were used to train the agent
+    def __init__(self, expansionWeight=7.614144709985369, agressiveWeight=1.7574868125047338, centerDistanceWeight=8.200845538225007, openSpaceWeight=5.33281289566942, extendBarrierWeight=8.602283333747607):
         super(StudentAgent, self).__init__()
         self.name = "StudentAgent"
         self.dir_map = {
@@ -112,12 +112,9 @@ class StudentAgent(Agent):
 
     def MaxValue(self, myPos, advPos, depth, chessBoard, alpha, beta, evalMove = None):
         
-        if self.cutoff(myPos, advPos, depth, chessBoard):
-            return self.eval(myPos, advPos, chessBoard, evalMove, 0), None
-        
-        # isGameOver, myScore, advScore = self.isGameOver(myPos, advPos, chessBoard)
-        # if self.cutoff(myPos, advPos, depth, chessBoard) or isGameOver:
-        #     return self.eval(myPos, advPos, chessBoard, evalMove, myScore - advScore), None
+        isGameOver, myScore, advScore = self.isGameOver(myPos, advPos, chessBoard)
+        if self.cutoff(myPos, advPos, depth, chessBoard) or isGameOver:
+            return self.eval(myPos, advPos, chessBoard, evalMove, myScore - advScore), None
 
         # Transposition implementation for more efficient iterative deepening, based on: http://people.csail.mit.edu/plaat/mtdf.html#abmem
         transpositionKey = self.getTranspositionKey(myPos, advPos, chessBoard, True)
@@ -157,12 +154,9 @@ class StudentAgent(Agent):
 
     def MinValue(self, myPos, advPos, depth, chessBoard, alpha, beta, evalMove = None):
 
-        if self.cutoff(myPos, advPos, depth, chessBoard):
-            return self.eval(myPos, advPos, chessBoard, evalMove, 0), None
-        
-        # isGameOver, myScore, advScore = self.isGameOver(myPos, advPos, chessBoard)
-        # if self.cutoff(myPos, advPos, depth, chessBoard) or isGameOver:
-        #     return self.eval(myPos, advPos, chessBoard, evalMove, myScore - advScore), None
+        isGameOver, myScore, advScore = self.isGameOver(myPos, advPos, chessBoard)
+        if self.cutoff(myPos, advPos, depth, chessBoard) or isGameOver:
+            return self.eval(myPos, advPos, chessBoard, evalMove, myScore - advScore), None
 
         # Transposition implementation for more efficient iterative deepening, based on: http://people.csail.mit.edu/plaat/mtdf.html#abmem
         transpositionKey = self.getTranspositionKey(myPos, advPos, chessBoard, False)

@@ -7,12 +7,13 @@ import multiprocessing
 import numpy as np
 import time
 
-populationSize = 10
+populationSize = 8
 numGenerations = 100
 mutationRate = 0.35
 crossOverRate = 0.8
 weightsPerPlayer = 5
 logDir = "logs"
+winPercentage = {}
 
 # Assuming that your enemy agents' names are valid and will be used for some logic
 enemyAgentnames = ["mcts_agent","alex_agent", "emile_agent", "heuristic_agent", "mcts_agent", "random_agent"]
@@ -32,12 +33,15 @@ args = argparse.Namespace(
     display_save=False,
     display_save_path="plots/",
     autoplay=True,
-    autoplay_runs=5
+    autoplay_runs=10
 )
 
-def log_best_weights(best_weights, generation):
+def log_best_weights(best_weights, generation, win_percentages):
     with open(os.path.join(logDir, f"best_weights_gen_{generation}.txt"), 'w') as f:
         f.write(str(best_weights) + "\n")
+        f.write("Win Percentages:\n")
+        for agent, win_perc in win_percentages.items():
+            f.write(f"{agent}: {win_perc*100}%\n")
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -45,16 +49,21 @@ creator.create("Individual", list, fitness=creator.FitnessMax)
 def evaluate(individual):
     player_1_weights = individual[:weightsPerPlayer]
     total_score = 0
+    win_percentages = {}
 
     for enemy_agent in enemyAgentnames:
         local_args = argparse.Namespace(**vars(args))
         local_args.player_1_weights = player_1_weights
         local_args.player_2 = enemy_agent
         p1_win_count, p2_win_count = Simulator(local_args).autoplay()
+        win_percentage = p1_win_count / args.autoplay_runs  # Assuming autoplay_runs is the total number of games
+        win_percentages[enemy_agent] = win_percentage
         total_score += p1_win_count - p2_win_count
 
-    # Here, we simply sum up the scores, but you can use other methods of aggregation
-    return total_score,
+    individual_key = str(individual)  # or any other unique identifier
+    winPercentage[individual_key] = win_percentages
+
+    return total_score
 
 toolbox = base.Toolbox()
 toolbox.register("attr_float", random.uniform, 0, 10)
@@ -69,7 +78,7 @@ def main():
     if not os.path.exists(logDir):
         os.makedirs(logDir)
 
-    num_processes = 30
+    num_processes = 10
     pool = multiprocessing.Pool(processes=num_processes)
     toolbox.register("map", pool.map)
 
@@ -86,7 +95,9 @@ def main():
 
         # Log best weights
         best_ind = tools.selBest(population, 1)[0]
-        log_best_weights(best_ind, gen)
+        individual_key = str(best_ind)
+        best_win_percentages = winPercentage.get(individual_key, {})
+        log_best_weights(best_ind, gen, best_win_percentages) 
 
         # Store a historical best
         if gen % 10 == 0:
@@ -108,4 +119,4 @@ def main():
 
 if __name__ == '__main__':
     time_taken = 0
-    print("Time taken:", time_taken)
+    main()
